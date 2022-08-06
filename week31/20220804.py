@@ -19,7 +19,7 @@ pc_lst = []
 for i in range(d - 1):
     tmp = []
     for j in range(d - i - 1):
-        tmp.append(pv.Bicop(family=pv.BicopFamily.gaussian, parameters=[[0.75]]))
+        tmp.append(pv.Bicop(family=pv.BicopFamily.gaussian, parameters=[[0.85]]))
     pc_lst.append(tmp)
 
 cop = pv.Vinecop(s, pc_lst)
@@ -33,9 +33,11 @@ def get(X, i):
     return X[:, int(i - 1)]
 
 
-def vfunc(fun, X1, X2):
-    u = np.vstack([np.array(X1), np.array(X2)]).T
-    return fun(u)
+def vfunc(fun, X1, X2, transpose=True):
+    if transpose:
+        return fun(np.vstack([np.array(X1), np.array(X2)]).T)
+    else:
+        return fun(np.vstack([np.array(X1), np.array(X2)]))
 
 
 def find(D, a_str):
@@ -98,7 +100,9 @@ for i in range(d - 1)[::-1]:
             if (arg2 is None) and (coord is not None):
                 arg2 = V[coord]
     assert arg2 is not None
-
     w = vfunc(cop.get_pair_copula(i, 0).hinv2, w, arg2)
 
-np.corrcoef(np.vstack([w, get(U, T[d-1,0])]))
+for i in range(1, d):
+    true_corr = vfunc(np.corrcoef, get(U, cop.order[0]), get(U, cop.order[i]), False)[0][1]
+    est_corr = vfunc(np.corrcoef, w, get(U, cop.order[i]), False)[0][1]
+    print(true_corr, est_corr)
