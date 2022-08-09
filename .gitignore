@@ -1,4 +1,7 @@
-.DS_Store
 *.Rproj
 .Rproj.user
-.ipynb_checkpoints
+*.pkl
+.DS_Store
+.ipynb_checkpoints/
+.idea/
+__pycache__/
