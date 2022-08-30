@@ -1,5 +1,7 @@
 import numpy as np
 
+from vcimpute.util import get
+
 
 def simulate_order0(cop, U):
     d = U.shape[1]
@@ -58,9 +60,6 @@ def simulate_order0(cop, U):
 
     return w
 
-
-def get(X, i):
-    return X[:, int(i - 1)]
 
 
 def vfunc(fun, X1, X2, transpose=True):

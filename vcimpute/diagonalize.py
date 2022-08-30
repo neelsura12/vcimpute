@@ -2,12 +2,12 @@ import numpy as np
 import pyvinecopulib as pv
 
 
-def diagonalize_copula(cop1, a):
+def diagonalize_copula(cop1, var):
     T1 = cop1.matrix
     d = T1.shape[0]
     ced, cing, param = get_ced_cing(T1, cop1)
 
-    T2 = diagonalize_matrix(T1, a)
+    T2 = diagonalize_matrix(T1, var)
 
     pair_copulas = []
     for t in range(d - 1):
