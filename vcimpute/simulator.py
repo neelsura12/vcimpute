@@ -40,8 +40,8 @@ def simulate_order0(cop, U):
                 if (arg1 is not None) and (arg2 is not None):
                     V1[i, j] = vfunc(cop.get_pair_copula(i, j).hfunc2, arg1, arg2)
                     V2[i, j] = vfunc(cop.get_pair_copula(i, j).hfunc1, arg1, arg2)
-                    D1[i, j] = f'{var1}|' + ','.join(sorted(W[i, j].split(',') + [str(var2)]))
-                    D2[i, j] = f'{var2}|' + ','.join(sorted(W[i, j].split(',') + [str(var1)]))
+                    D1[i, j] = f'{var1}|' + ','.join(map(str, sorted(list(map(int, W[i, j].split(','))) + [var2])))
+                    D2[i, j] = f'{var2}|' + ','.join(map(str, sorted(list(map(int, W[i, j].split(','))) + [var1])))
 
     # backward
     w = np.random.uniform(size=U.shape[0])
