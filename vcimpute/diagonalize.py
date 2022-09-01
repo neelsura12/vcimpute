@@ -1,8 +1,10 @@
 import numpy as np
 import pyvinecopulib as pv
 
+from vcimpute.constant import bicop_family_map
 
-def diagonalize_copula(cop1, var):
+
+def diagonalize_copula(cop1, var, family='gaussian'):
     T1 = cop1.matrix
     d = T1.shape[0]
     ced, cing, param = get_ced_cing(T1, cop1)
@@ -16,8 +18,8 @@ def diagonalize_copula(cop1, var):
         for e in range(d - 1 - t):
             cur.append(
                 pv.Bicop(
-                    family=pv.BicopFamily.gaussian,
-                    parameters=[param[ced.index(sorted((T2[d - 1 - e, e], T2[t, e])))]]
+                    family=bicop_family_map[family],
+                    parameters=param[ced.index(sorted((T2[d - 1 - e, e], T2[t, e])))]
                 )
             )
     cop2 = pv.Vinecop(matrix=T2, pair_copulas=pair_copulas)
@@ -50,7 +52,6 @@ def diagonalize_matrix(T1, a):
     return T2
 
 
-# TODO: generalize to non-gaussian copulas (need to take copula type)
 def get_ced_cing(T, cop=None):
     d = T.shape[1]
     cing = []
@@ -64,7 +65,7 @@ def get_ced_cing(T, cop=None):
                 tmp.append(T[i2, j])
             cing.append(sorted(tmp))
             if cop is not None:
-                param.append(cop.get_parameters(i1, j)[0][0])
+                param.append(cop.get_parameters(i1, j))
     return ced, cing, param
 
 

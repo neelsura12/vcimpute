@@ -42,3 +42,14 @@ def get_pair_copulas(cop):
 
 def get(X, var):
     return X[:, int(var - 1)]
+
+
+def vine_structure_to_matrix(structure):
+    d = len(structure.order)
+    mat = np.zeros(shape=(d, d), dtype=np.uint64)
+    for t in range(d - 1):
+        for e in range(d - t - 1):
+            mat[t, e] = structure.struct_array(t, e)
+    for j in range(d):
+        mat[d - j - 1, j] = structure.order[j]
+    return mat
