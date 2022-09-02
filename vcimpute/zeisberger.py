@@ -1,11 +1,10 @@
-import random
-
 import numpy as np
 import pyvinecopulib as pv
 
-from vcimpute.constant import bicop_family_map
+from vcimpute.constants import bicop_family_map
 from vcimpute.simulator import simulate_orderk
-from vcimpute.util import get, make_triangular_array, get_order, vine_structure_to_matrix
+from vcimpute.utils import get, make_triangular_array
+from vcimpute.helper_vinestructs import generate_r_vine_structure, generate_c_or_d_vine_structure
 
 
 class VineCopReg:
@@ -27,11 +26,11 @@ class VineCopReg:
         # simulate vine structure for sequential imputation
         structure = None
         if self.vine_structure == 'R':
-            structure = _generate_r_vine_structure(d, n_mis)
+            structure = generate_r_vine_structure(d, n_mis)
         elif self.vine_structure == 'C':
-            structure = _generate_c_or_d_vine_structure(d, n_mis, pv.CVineStructure)
+            structure = generate_c_or_d_vine_structure(d, n_mis, pv.CVineStructure)
         elif self.vine_structure == 'D':
-            structure = _generate_c_or_d_vine_structure(d, n_mis, pv.DVineStructure)
+            structure = generate_c_or_d_vine_structure(d, n_mis, pv.DVineStructure)
         assert structure is not None
 
         # make copula with fixed structure
@@ -53,29 +52,3 @@ class VineCopReg:
 
         assert not np.any(np.isnan(X_imp)), 'invalid state, not all values imputed'
         return X_imp
-
-
-def _generate_r_vine_structure(d, n_mis):
-    # simulate Rvine structure
-    structure = pv.RVineStructure.simulate(d=d)
-    mat = vine_structure_to_matrix(structure)
-
-    # relabel Rvine matrix
-    mat2 = np.copy(mat)
-    for k in range(n_mis):
-        order = get_order(mat2)
-        if order[k] != (d - k):
-            prev = order[k]
-            mat2 = np.where(mat == prev, d - k, mat2)
-            mat2 = np.where(mat == d - k, prev, mat2)
-        mat = mat2
-
-    # output Rvine structure
-    return pv.RVineStructure(mat2)
-
-
-def _generate_c_or_d_vine_structure(d, n_mis, struct_fun):
-    rest_indices = list(range(1, d - n_mis + 1))
-    random.shuffle(rest_indices)
-    mis_indices = list(range(d - n_mis + 1, d + 1))[::-1]
-    return struct_fun(order=mis_indices + rest_indices)

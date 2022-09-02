@@ -1,6 +1,6 @@
 import numpy as np
 
-from vcimpute.util import get
+from vcimpute.utils import get, vfunc, find
 
 
 def simulate_order0(cop, U):
@@ -117,16 +117,3 @@ def simulate_orderk(cop, U, k):
         w = vfunc(cop.get_pair_copula(i, k).hinv2, w, arg2)
 
     return w
-
-
-def vfunc(fun, X1, X2, transpose=True):
-    if transpose:
-        return fun(np.vstack([np.array(X1), np.array(X2)]).T)
-    else:
-        return fun(np.vstack([np.array(X1), np.array(X2)]))
-
-
-def find(D, a_str):
-    coord = np.argwhere(D == a_str)
-    if coord.shape[0] == 1:
-        return tuple(coord[0])

@@ -5,7 +5,7 @@ from gcimpute.gaussian_copula import GaussianCopula
 from gcimpute.helper_evaluation import get_smae
 from joblib import Parallel, delayed
 
-from diagonalize import diagonalize_copula
+from helper_diagonalize import diagonalize_copula
 from vcimpute.simulator import get, simulate_order0
 
 

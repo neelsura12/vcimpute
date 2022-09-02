@@ -1,7 +1,7 @@
 import numpy as np
 import pyvinecopulib as pv
 
-from vcimpute.util import make_triangular_array, get
+from vcimpute.utils import make_triangular_array, get, vfunc, find
 
 
 def extend_vine(cop_in, U, new_to_old_map):
@@ -87,16 +87,3 @@ def extend_vine(cop_in, U, new_to_old_map):
 
     cop_out = pv.Vinecop(T_new, pair_copulas)
     return cop_out
-
-
-def vfunc(fun, X1, X2, transpose=True):
-    if transpose:
-        return fun(np.vstack([np.array(X1), np.array(X2)]).T)
-    else:
-        return fun(np.vstack([np.array(X1), np.array(X2)]))
-
-
-def find(D, a_str):
-    coord = np.argwhere(D == a_str)
-    if coord.shape[0] == 1:
-        return tuple(coord[0])

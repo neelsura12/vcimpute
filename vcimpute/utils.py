@@ -53,3 +53,21 @@ def vine_structure_to_matrix(structure):
     for j in range(d):
         mat[d - j - 1, j] = structure.order[j]
     return mat
+
+
+def is_leaf_in_all_subtrees(T, var):
+    d = T.shape[0]
+    return (T[d - 2, 0] == var) or (T[d - 1, 0] == var)
+
+
+def vfunc(fun, X1, X2, transpose=True):
+    if transpose:
+        return fun(np.vstack([np.array(X1), np.array(X2)]).T)
+    else:
+        return fun(np.vstack([np.array(X1), np.array(X2)]))
+
+
+def find(D, a_str):
+    coord = np.argwhere(D == a_str)
+    if coord.shape[0] == 1:
+        return tuple(coord[0])
