@@ -12,7 +12,7 @@ def simulate_order_k(cop, U, k):
     CS = np.empty(shape=(d, d), dtype=object)
     CC1 = np.empty(shape=(d, d), dtype=object)
     CC2 = np.empty(shape=(d, d), dtype=object)
-    
+
     # forward
     for j in range(k, d - 1)[::-1]:
         for i in range(d - j - 1):

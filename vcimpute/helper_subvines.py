@@ -2,6 +2,7 @@ from collections import deque
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 
 from vcimpute.utils import make_triangular_array, is_leaf_in_all_subtrees
 
@@ -61,17 +62,13 @@ def downsize_copula(T_in, pcs_in, T_cand):
         return T_in, pcs_in
 
     d2 = np.amax(np.count_nonzero(T_cand, axis=0))
-    i_tmp_lst, j_tmp_lst = np.where(T_cand != 0)
-    ax0_order = np.argsort(j_tmp_lst)
-    i_tmp_lst = i_tmp_lst[ax0_order]
-    j_tmp_lst = j_tmp_lst[ax0_order]
-
-    assert len(j_tmp_lst) == len(i_tmp_lst) == (d2 ** 2 - d2 * (d2 - 1) // 2)
+    ij_tmp = pd.DataFrame(np.where(T_cand != 0)).T.sort_values(by=[1, 0]).values
+    assert ij_tmp.shape[0] == (d2 ** 2 - d2 * (d2 - 1) // 2)
 
     T_out = np.zeros(shape=(d2, d2), dtype=np.uint64)
     pcs_out = make_triangular_array(d2)
     i2, j2 = 0, 0
-    for i_tmp, j_tmp in zip(i_tmp_lst, j_tmp_lst):
+    for i_tmp, j_tmp in ij_tmp:
         if i2 > d2 - j2 - 1:
             j2 += 1
             i2 = 0
