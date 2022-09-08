@@ -4,6 +4,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
+from vcimpute.utils import get_order
 from vcimpute.utils import make_triangular_array, is_leaf_in_all_subtrees
 
 
@@ -19,22 +20,6 @@ def find_subvine_structures(T, pcs, var_mis):
             elif T_cand.shape[0] > 1:
                 unexplored.append((T_cand, pcs_cand))
     return accepted
-
-
-def remove_column(T_in, pcs_in, var_mis, j):
-    """
-    remove column if var_mis in cond. set +
-    remove all entries of that column's diagonal var
-    """
-    d = T_in.shape[0]
-    if var_mis in T_in[:d - j - 1, j]:
-        T_tmp = deepcopy(T_in)
-        var_diag = T_tmp[d - j - 1, j]
-        T_tmp[:, j] = 0
-        T_tmp = np.where(T_tmp == var_diag, 0, T_tmp)
-        return downsize_copula(T_in, pcs_in, T_tmp)
-    else:
-        return T_in, pcs_in
 
 
 def remove_inbetween(T_in, pcs_in, var_mis, j):
@@ -55,6 +40,35 @@ def remove_inbetween(T_in, pcs_in, var_mis, j):
         return downsize_copula(T_in, pcs_in, T_tmp)
     else:
         return T_in, pcs_in
+
+
+def remove_column(T_in, pcs_in, var_mis, j):
+    """
+    remove column if var_mis in cond. set +
+    remove all entries of that column's diagonal var
+    """
+    d = T_in.shape[0]
+    if var_mis in T_in[:d - j - 1, j]:
+        T_tmp = deepcopy(T_in)
+        var_diag = T_tmp[d - j - 1, j]
+        T_tmp[:, j] = 0
+        T_tmp = np.where(T_tmp == var_diag, 0, T_tmp)
+        return downsize_copula(T_in, pcs_in, T_tmp)
+    else:
+        return T_in, pcs_in
+
+
+def remove_var(T_in, pcs_in, var_mis):
+    """
+    remove column
+    remove all entries of that column's diagonal var
+    """
+    order = get_order(T_in)
+    j = order.index(var_mis)
+    T_tmp = deepcopy(T_in)
+    T_tmp[:, j] = 0
+    T_tmp = np.where(T_tmp == var_mis, 0, T_tmp)
+    return downsize_copula(T_in, pcs_in, T_tmp)
 
 
 def downsize_copula(T_in, pcs_in, T_cand):
