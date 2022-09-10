@@ -9,6 +9,13 @@ bicop_family_map = {
 }
 
 
+def make_triangular_array(d):
+    pair_copulas = [None for _ in range(d - 1)]
+    for j in range(d - 1)[::-1]:
+        pair_copulas[j] = [None for _ in range(d - j - 1)]
+    return pair_copulas
+
+
 def make_copula(d):
     structure = pv.RVineStructure.simulate(d)
 
@@ -23,13 +30,6 @@ def make_copula(d):
     cop = pv.Vinecop(structure, pair_copulas)
 
     return cop
-
-
-def make_triangular_array(d):
-    pair_copulas = np.empty(shape=(d - 1,), dtype='object')
-    for j in range(d - 1)[::-1]:
-        pair_copulas[j] = list(np.empty(shape=(d - j - 1,), dtype='object'))
-    return list(pair_copulas)
 
 
 def get_order(T):

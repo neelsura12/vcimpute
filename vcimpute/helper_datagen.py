@@ -6,7 +6,7 @@ from gcimpute.helper_data import generate_sigma, generate_LRGC, generate_mixed_f
 from gcimpute.helper_mask import mask_MCAR as gcimpute_mask_MCAR
 from statsmodels.distributions.empirical_distribution import ECDF
 
-from vcimpute.utils import make_triangular_array, random_int
+from vcimpute.utils import make_triangular_array
 
 
 def make_complete_data_matrix(n, d, copula_type, seed, **kwargs):
