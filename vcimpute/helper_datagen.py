@@ -6,10 +6,16 @@ from gcimpute.helper_data import generate_sigma, generate_LRGC, generate_mixed_f
 from gcimpute.helper_mask import mask_MCAR as gcimpute_mask_MCAR
 from statsmodels.distributions.empirical_distribution import ECDF
 
-from vcimpute.utils import make_triangular_array
+from vcimpute.utils import make_triangular_array, random_int
 
 
-def make_complete_data_matrix(n, d, copula_type, **kwargs):
+def make_complete_data_matrix(n, d, copula_type, seed, **kwargs):
+    """
+    additional kwargs
+    LRGC: scalar valued [rank] and [sigma]
+    GC (zhao): no vine_structure
+    VC (pyvinecopulib): character [vine_structure]
+    """
     if copula_type == 'LRGC':
         assert 'sigma' in kwargs, 'LRGC needs param sigma'
         assert 'rank' in kwargs, 'LRGC needs param rank'
@@ -17,17 +23,19 @@ def make_complete_data_matrix(n, d, copula_type, **kwargs):
             var_types={'cont': list(range(d))},
             rank=kwargs['rank'],
             sigma=kwargs['sigma'],
-            n=n
+            n=n,
+            seed=seed
         )
-        U = obs_to_uniform(X)
+        U = probability_integral_transform(X)
     elif copula_type == 'gaussian' and ('vine_structure' not in kwargs):
         sigma = generate_sigma(p=d)
         X = generate_mixed_from_gc(
             var_types={'cont': list(range(d))},
             n=n,
-            sigma=sigma
+            sigma=sigma,
+            seed=seed
         )
-        U = obs_to_uniform(X)
+        U = probability_integral_transform(X)
     elif copula_type in ('gaussian', 'student', 'clayton', 'frank'):
         assert 'vine_structure' in kwargs, 'copula sim needs param vine_structure'
         assert kwargs['vine_structure'] in ['C', 'D', 'R'], 'vine structure must be C, D or R'
@@ -51,7 +59,7 @@ def make_complete_data_matrix(n, d, copula_type, **kwargs):
             family = pv.BicopFamily.frank
 
         pair_copulas = make_triangular_array(d)
-        theta = generate_theta(d * (d - 1) // 2, copula_type)
+        theta = _generate_theta(d * (d - 1) // 2, copula_type, seed)
         k = 0
         for j in range(d - 1):
             for i in range(d - j - 1):
@@ -87,20 +95,21 @@ def mask_MCAR(X, mask_fraction, d_mis=None, monotonic_missingness=False):
     return X_mask
 
 
-def generate_theta(d, copula_type):
+def _generate_theta(d, copula_type, seed):
+    rng = np.random.default_rng(seed)
     assert copula_type in ['gaussian', 'student', 'clayton', 'frank']
     theta = None
     if copula_type in ['gaussian', 'student']:
-        theta = 2 * (np.random.uniform(size=d) - 0.5)
+        theta = 2 * (rng.uniform(size=d) - 0.5)  # [-1,1]
     elif copula_type == 'frank':
-        sign = 2 * (np.random.binomial(n=1, p=0.5, size=d) - 0.5)
-        theta = sign * np.random.uniform(0, 35, size=d)
+        sign = 2 * (rng.binomial(n=1, p=0.5, size=d) - 0.5)  # {0,1}
+        theta = sign * rng.uniform(0, 35, size=d)  # [-35,35]
     elif copula_type == 'clayton':
-        theta = np.random.uniform(1e-10, 28, size=d)
+        theta = rng.uniform(1e-10, 28, size=d)  # [1e-10, 28]
     return theta
 
 
-def obs_to_uniform(X):
+def probability_integral_transform(X):
     U = np.empty(shape=X.shape)
     for j in range(X.shape[1]):
         U[:, j] = ECDF(X[:, j])(X[:, j])
