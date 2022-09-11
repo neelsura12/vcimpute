@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 import pyvinecopulib as pv
 from gcimpute.helper_data import generate_sigma, generate_LRGC, generate_mixed_from_gc
@@ -75,23 +73,33 @@ def make_complete_data_matrix(n, d, copula_type, seed, **kwargs):
     return U
 
 
-def mask_MCAR(X, mask_fraction, d_mis=None, monotonic_missingness=False):
+def mask_MCAR(X, pattern, mask_frac, seed, **kwargs):
     n = X.shape[0]
     d = X.shape[1]
-
-    if d_mis == 1:
+    rng = np.random.default_rng(seed)
+    if pattern == 'univariate':
         X_mask = np.copy(X)
-        miss_idx = random.choice(list(range(d)))
-        is_missing = np.random.binomial(n=1, p=mask_fraction, size=X_mask.shape[0]).astype(bool)
+        miss_idx = rng.choice(range(d))
+        is_missing = rng.binomial(n=1, p=mask_frac, size=X_mask.shape[0]).astype(bool)
         X_mask[is_missing, miss_idx] = np.nan
-    elif monotonic_missingness:
-        assert d_mis < d
+    elif pattern == 'monotone':
+        assert 'n_cols' in kwargs, 'monotone missingness pattern needs param n_cols'
+        n_cols = kwargs['n_cols']
+        n_max_mis = int(n * n_cols * mask_frac)
         X_mask = np.copy(X)
-        for j in range(d - d_mis, d):
-            is_missing = np.random.binomial(n=1, p=mask_fraction, size=n).astype(bool)
-            X_mask[is_missing, j:] = np.nan
+        miss_indices = rng.choice(range(d), n_cols, replace=False)
+        obs_coords = range(n)
+        for k, _ in enumerate(miss_indices):
+            n_this_mis = rng.integers(low=1, high=n_max_mis / (n_cols - k) + 1) if k != (n_cols - 1) else n_max_mis
+            is_missing = rng.choice(obs_coords, n_this_mis, replace=False)
+            obs_coords = np.setdiff1d(obs_coords, is_missing)
+            for j in miss_indices[k:]:
+                X_mask[is_missing, j] = np.nan
+            n_max_mis = max(1, n_max_mis - np.sum(np.isnan(X_mask)))
+    elif pattern == 'general':
+        X_mask = gcimpute_mask_MCAR(X, mask_fraction=mask_frac)
     else:
-        X_mask = gcimpute_mask_MCAR(X, mask_fraction=mask_fraction)
+        raise NotImplementedError('missingness [pattern] must be one of univariate, monotone, general')
     return X_mask
 
 
