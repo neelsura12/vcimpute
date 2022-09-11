@@ -1,7 +1,7 @@
 import numpy as np
 import pyvinecopulib as pv
 
-from vcimpute.constants import bicop_family_map
+from vcimpute.utils import bicop_family_map
 
 
 def diagonalize_copula(cop1, var, family='gaussian'):
