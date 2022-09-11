@@ -90,12 +90,15 @@ def mask_MCAR(X, pattern, mask_frac, seed, **kwargs):
         miss_indices = rng.choice(range(d), n_cols, replace=False)
         obs_coords = range(n)
         for k, _ in enumerate(miss_indices):
-            n_this_mis = rng.integers(low=1, high=n_max_mis / (n_cols - k) + 1) if k != (n_cols - 1) else n_max_mis
+            n_rem_miss = n_max_mis - np.sum(np.isnan(X_mask))
+            if k != (n_cols - 1):
+                n_this_mis = rng.integers(low=1, high=max(1, n_rem_miss) / (n_cols - k) + 1)
+            else:
+                n_this_mis = n_rem_miss
             is_missing = rng.choice(obs_coords, n_this_mis, replace=False)
             obs_coords = np.setdiff1d(obs_coords, is_missing)
             for j in miss_indices[k:]:
                 X_mask[is_missing, j] = np.nan
-            n_max_mis = max(1, n_max_mis - np.sum(np.isnan(X_mask)))
     elif pattern == 'general':
         X_mask = gcimpute_mask_MCAR(X, mask_fraction=mask_frac)
     else:
