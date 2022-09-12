@@ -26,3 +26,7 @@ def missing_rows(X_mis):
 
 def n_miss_by_col(X_mis):
     return np.sum(np.isnan(X_mis), axis=0)
+
+
+def idx_mis_by_col(X_mis):
+    return np.where(np.any(np.isnan(X_mis),axis=0))[0]
