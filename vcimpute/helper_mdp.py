@@ -12,8 +12,8 @@ def all_mdps(X_mis):
     return mdps
 
 
-def select_by_mdp(X_mis, mdp):
-    return X_mis[(np.isnan(X_mis) == mdp).all(axis=1)]
+def mdp_coords(X_mis, mdp):
+    return np.where((np.isnan(X_mis) == mdp).all(axis=1))[0]
 
 
 def old_to_new(old_indices, new_indices):
@@ -26,7 +26,3 @@ def missing_rows(X_mis):
 
 def n_miss_by_col(X_mis):
     return np.sum(np.isnan(X_mis), axis=0)
-
-
-def idx_mis_by_col(X_mis):
-    return np.where(np.any(np.isnan(X_mis),axis=0))[0]

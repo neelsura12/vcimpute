@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vcimpute.helper_mdp import reindex_monotonic, all_mdps, select_by_mdp
+from vcimpute.helper_mdp import reindex_monotonic, all_mdps, mdp_coords
 
 
 @pytest.fixture
@@ -26,5 +26,5 @@ def test_all_mdps(X_mis):
 
 
 def test_select_by_mdp(X_mis):
-    X_sub = select_by_mdp(X_mis, [False, True, False])
-    assert X_sub.shape[0] == 2
+    mis_coords = mdp_coords(X_mis, [False, True, False])
+    assert np.array_equal(mis_coords, [2, 3])
