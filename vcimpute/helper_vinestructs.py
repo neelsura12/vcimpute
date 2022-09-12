@@ -1,52 +1,42 @@
-import random
-
 import numpy as np
 import pyvinecopulib as pv
 
-from vcimpute.utils import get_order, vine_structure_to_matrix
+from vcimpute.utils import get_order
 
 
-def relabel_vine_mat(T, old_to_new):
-    Tnew = np.copy(T)
-    for old, new in old_to_new.items():
-        Tnew = np.where(T == old, new, Tnew)
-    return Tnew
+def generate_r_vine_structure(miss_vars, obs_vars):
+    d = len(miss_vars) + len(obs_vars)
+
+    # simulate
+    structure_random = pv.RVineStructure.simulate(d=d)
+    T_random = vine_structure_to_matrix(structure_random)
+
+    old_order = get_order(T_random)
+    old_to_new = {}
+    for i, var_mis in enumerate(miss_vars):
+        old_to_new[old_order[i]] = var_mis
+    for i, var_obs in zip(range(len(miss_vars), d), obs_vars):
+        old_to_new[old_order[i]] = var_obs
+
+    # relabel
+    T_ordered = relabel_vine_matrix(T_random, old_to_new)
+    structure_ordered = pv.RVineStructure(T_ordered)
+
+    return structure_ordered
 
 
-def natural_order_mat(T):
-    structure = pv.RVineStructure(T)
-    d = T.shape[0]
-    T2 = np.zeros(shape=(d, d), dtype=np.uint64)
-    for j in range(d - 1):
-        for i in range(d - j - 1):
-            T2[i, j] = structure.struct_array(i, j, natural_order=True)
+def vine_structure_to_matrix(structure):
+    d = len(structure.order)
+    T = np.zeros(shape=(d, d), dtype=np.uint64)
     for j in range(d):
-        T2[d - j - 1, j] = j + 1
-    return T2
+        for i in range(d - j - 1):
+            T[j, i] = structure.struct_array(j, i)
+        T[d - j - 1, j] = structure.order[j]
+    return T
 
 
-# TODO: generify
-def generate_r_vine_structure(d, n_mis):
-    # simulate Rvine structure
-    structure = pv.RVineStructure.simulate(d=d)
-    mat = vine_structure_to_matrix(structure)
-
-    # relabel Rvine matrix
-    mat2 = np.copy(mat)
-    for k in range(n_mis):
-        order = get_order(mat2)
-        if order[k] != (d - k):
-            prev = order[k]
-            mat2 = np.where(mat == prev, d - k, mat2)
-            mat2 = np.where(mat == d - k, prev, mat2)
-        mat = mat2
-
-    # output Rvine structure
-    return pv.RVineStructure(mat2)
-
-
-def generate_c_or_d_vine_structure(d, n_mis, struct_fun):
-    rest_indices = list(range(1, d - n_mis + 1))
-    random.shuffle(rest_indices)
-    mis_indices = list(range(d - n_mis + 1, d + 1))[::-1]
-    return struct_fun(order=mis_indices + rest_indices)
+def relabel_vine_matrix(T_old, old_to_new):
+    T_new = np.copy(T_old)
+    for old, new in old_to_new.items():
+        T_new = np.where(T_old == old, new, T_new)
+    return T_new

@@ -51,17 +51,6 @@ def get(X, var):
     return X[:, int(var - 1)]
 
 
-def vine_structure_to_matrix(structure):
-    d = len(structure.order)
-    mat = np.zeros(shape=(d, d), dtype=np.uint64)
-    for t in range(d - 1):
-        for e in range(d - t - 1):
-            mat[t, e] = structure.struct_array(t, e)
-    for j in range(d):
-        mat[d - j - 1, j] = structure.order[j]
-    return mat
-
-
 def is_leaf_in_all_subtrees(T, var):
     d = T.shape[0]
     return (T[d - 2, 0] == var) or (T[d - 1, 0] == var)
