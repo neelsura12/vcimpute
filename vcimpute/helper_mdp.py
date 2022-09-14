@@ -5,10 +5,14 @@ def reindex_monotonic(X_mis):
     return np.argsort(np.sum(~np.isnan(X_mis), axis=0))[::-1]
 
 
-def all_mdps(X_mis):
+def all_mdps(X_mis, sort_order=None):
     mdps = np.unique(np.isnan(X_mis), axis=0)
     mdps = mdps[np.any(mdps, axis=1), :]  # remove complete cases
-    mdps = mdps[np.argsort(np.count_nonzero(mdps, axis=1)), :]  # sort by increasing missingness
+    if sort_order is not None:
+        if sort_order == 'vars':  # sort by increasing missing vars
+            mdps = mdps[np.argsort(np.count_nonzero(mdps, axis=1)), :]
+        elif sort_order == 'count':  # sort by decreasing missing count
+            mdps = mdps[np.argsort([len(mdp_coords(X_mis, mdp)) for mdp in mdps])[::-1]]
     return mdps
 
 
