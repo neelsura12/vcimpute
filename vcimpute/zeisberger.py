@@ -20,9 +20,9 @@ logging.basicConfig(
 
 
 class VineCopReg:
-    def __init__(self, bicop_families, num_threads, vine_structure, is_monotone, seed):
-        family_set = [bicop_family_map[k] for k in bicop_families]
-        self.controls = pv.FitControlsVinecop(family_set=family_set, num_threads=num_threads)
+    def __init__(self, bicop_family, num_threads, vine_structure, is_monotone, seed):
+        self.bicop_family = bicop_family_map[bicop_family]
+        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=num_threads)
         assert vine_structure in ['R', 'C', 'D']
         self.vine_structure = vine_structure
         self.is_monotone = is_monotone
@@ -93,9 +93,9 @@ class VineCopReg:
 
 
 class VineCopFit:
-    def __init__(self, bicop_families, num_threads, is_monotone, seed):
-        family_set = [bicop_family_map[k] for k in bicop_families]
-        self.controls = pv.FitControlsVinecop(family_set=family_set, num_threads=num_threads)
+    def __init__(self, bicop_family, num_threads, is_monotone, seed):
+        self.bicop_family = bicop_family_map[bicop_family]
+        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=num_threads)
         self.is_monotone = is_monotone
         self.rng = np.random.default_rng(seed)
 
@@ -161,7 +161,7 @@ class VineCopFit:
                 X_imp_sub = X_imp[:, [int(new_to_old[i + 1] - 1) for i in range(len(new_to_old))]]
 
                 if T_sub[d_sub - 2, 0] == cur_var_mis:
-                    cop_sub_diag = diagonalize_copula(cop_sub, old_to_new[cur_var_mis])
+                    cop_sub_diag = diagonalize_copula(cop_sub, old_to_new[cur_var_mis], self.bicop_family)
                     ximp_lst.append(simulate_order_k(cop_sub_diag, X_imp_sub, 0))
                     imputed = True
 

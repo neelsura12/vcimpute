@@ -1,5 +1,6 @@
 import numpy as np
 import pyvinecopulib as pv
+from gcimpute.helper_evaluation import get_smae
 
 bicop_family_map = {
     'gaussian': pv.BicopFamily.gaussian,
@@ -67,3 +68,8 @@ def find(D, a_str):
     coord = np.argwhere(D == a_str)
     if coord.shape[0] == 1:
         return tuple(coord[0])
+
+
+def smae_mean(X_imp, X, X_mis):
+    smae = get_smae(X_imp, X, X_mis)
+    return np.mean(smae[~np.isnan(smae)])
