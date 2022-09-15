@@ -13,7 +13,7 @@ from vcimpute.zeisberger import VineCopReg, VineCopFit
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-    filename='compare_zeisberger_lrgc.log',
+    filename='compare_zeisberger_copula.log',
     format='%(asctime)s  %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S'
@@ -31,10 +31,11 @@ def impute(X, X_mis, seed, is_monotone, **kwargs):
     out = {}
     for k, v in kwargs.items():
         out[k] = v
+    vine_structure = 'R' if kwargs['vine_structure'] is None else kwargs['vine_structure']
     tagged_models = [
         (GaussianCopula(random_state=seed), 'gcimpute'),
-        (VineCopReg(bicop_family='gaussian', num_threads=10, vine_structure='R', is_monotone=is_monotone, seed=seed), 'copregR'),
-        (VineCopFit(bicop_family='gaussian', num_threads=10, is_monotone=is_monotone, seed=seed), 'copfit')
+        (VineCopReg(bicop_family=kwargs['copula_type'], num_threads=10, vine_structure=vine_structure, is_monotone=is_monotone, seed=seed), f'copreg{vine_structure}'),
+        (VineCopFit(bicop_family=kwargs['copula_type'], num_threads=10, is_monotone=is_monotone, seed=seed), 'copfit')
     ]
     for model, tag in tagged_models:
         logger.info(f'running {tag}')
@@ -45,7 +46,7 @@ def impute(X, X_mis, seed, is_monotone, **kwargs):
     return out
 
 
-def run_per_mask(pattern, mask_fraction, X, n, d, rank, sigma, seed):
+def run_per_mask(pattern, mask_fraction, X, n, d, copula_type, vine_structure, seed):
     logger.info(f'on pattern {pattern} with mask fraction {mask_fraction:.2f}')
     if pattern == 'monotone':
         n_cols = int(np.ceil(0.3 * d))
@@ -55,13 +56,13 @@ def run_per_mask(pattern, mask_fraction, X, n, d, rank, sigma, seed):
             X_mis,
             seed,
             True,
+            copula_type=copula_type,
+            vine_structure=vine_structure,
             pattern=pattern,
             mask_fraction=mask_fraction,
             n_cols=n_cols,
             n=n,
-            d=d,
-            rank=rank,
-            sigma=sigma
+            d=d
         )
     else:
         X_mis = mask_MCAR(X, pattern, mask_fraction, seed=seed)
@@ -70,52 +71,51 @@ def run_per_mask(pattern, mask_fraction, X, n, d, rank, sigma, seed):
             X_mis,
             seed,
             pattern == 'univariate',
+            copula_type=copula_type,
+            vine_structure=vine_structure,
             pattern=pattern,
             mask_fraction=mask_fraction,
             n=n,
-            d=d,
-            rank=rank,
-            sigma=sigma
+            d=d
         )
 
 
-def run_per_data(X, n, d, rank, sigma, seed, k):
-    logger.info(f'on data n={n} d={d} rank={rank} sigma={sigma:.2f} k={k}')
+def run_per_data(X, n, d, seed, copula_type, vine_structure, k):
+    logger.info(f'on data n={n} d={d} copula_type={copula_type} vine_structure={vine_structure} k={k}')
     pattern_lst = ['univariate', 'monotone', 'general']
     mask_fraction_lst = np.concatenate([
         np.arange(0.05, 0.1, 0.01),
         np.arange(0.1, 0.2, 0.05),
         [0.2]
     ])
-    f = partial(run_per_mask, X=X, n=n, d=d, rank=rank, sigma=sigma, seed=seed)
+    f = partial(run_per_mask, X=X, n=n, d=d, copula_type=copula_type, vine_structure=vine_structure, seed=seed)
     R = 10
     for r in range(R):
         for pattern, mask_fraction in product(pattern_lst, mask_fraction_lst):
             out = f(pattern, mask_fraction)
             (pd.DataFrame(out, index=np.arange(len(out))).to_csv(
-                f'/Users/nshah/work/vcimpute/output/lrgc_{k}_{r}_{pattern}_{str(int(mask_fraction * 100))}.csv',
+                f'/Users/nshah/work/vcimpute/output/copula_{k}_{r}_{pattern}_{str(int(mask_fraction * 100))}.csv',
                 index=False))
 
 
 def run():
     n = 1000
     d_lst = np.arange(5, 21, 3)
-    rank_prop_lst = [0.25, 0.5, 0.75]
-    sigma_lst = [0.01, 0.1]
+    copula_type_lst = ['gaussian', 'clayton', 'frank']
+    vine_structure_lst = [None, 'R', 'C', 'D']
 
     seed = 0
     k = 0
     for d in d_lst[::-1]:
-        seen_ranks = []
-        for rank_prop in rank_prop_lst:
-            rank = int(np.ceil(rank_prop * d))
-            if rank not in seen_ranks:
-                for sigma in sigma_lst:
-                    X = make_complete_data_matrix(n, d, 'LRGC', seed=seed, rank=rank, sigma=sigma)
-                    run_per_data(X, n, d, rank, sigma, seed, k)
-                    k += 1
-                    seed += 1
-            seen_ranks.append(rank)
+        for copula_type in copula_type_lst:
+            for vine_structure in vine_structure_lst:
+                if vine_structure is None:
+                    X = make_complete_data_matrix(n, d, copula_type, seed=seed)
+                else:
+                    X = make_complete_data_matrix(n, d, copula_type, seed=seed, vine_structure=vine_structure)
+                run_per_data(X, n, d, seed, copula_type, vine_structure, k)
+                k += 1
+                seed += 1
 
 
 if __name__ == '__main__':
