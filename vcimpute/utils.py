@@ -70,6 +70,15 @@ def find(D, a_str):
         return tuple(coord[0])
 
 
-def smae_mean(X_imp, X, X_mis):
-    smae = get_smae(X_imp, X, X_mis)
+def smae_mean(X_imp, X_true, X_mis):
+    smae = get_smae(X_imp, X_true, X_mis)
     return np.mean(smae[~np.isnan(smae)])
+
+
+def bias(X_imp, X_true):
+    return (np.linalg.norm(np.corrcoef(X_imp.T) - np.corrcoef(X_true.T), ord='fro') /
+            np.linalg.norm(np.corrcoef(X_true.T), ord='fro'))
+
+
+def complete_cases(X_mis):
+    return X_mis[np.all(~np.isnan(X_mis), axis=1)]
