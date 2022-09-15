@@ -1,4 +1,3 @@
-import logging
 
 import numpy as np
 import pyvinecopulib as pv
@@ -10,13 +9,6 @@ from vcimpute.helper_vinestructs import generate_r_vine_structure, relabel_vine_
 from vcimpute.simulator import simulate_order_k
 from vcimpute.utils import get, bicop_family_map, make_triangular_array, is_leaf_in_all_subtrees
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    filename='zeisberger.log',
-    format='%(asctime)s  %(levelname)-8s %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
 
 
 class VineCopReg:
@@ -29,21 +21,15 @@ class VineCopReg:
         self.rng = np.random.default_rng(seed)
 
     def fit_transform(self, X_mis):
-        logger.info('started')
-
         X_imp = np.copy(X_mis)
         if self.is_monotone:
-            logger.info('n_mis: ' + str(np.sum(np.isnan(X_imp))))
             self.impute(X_imp, [])
         else:
             mdps = sort_mdps_by_increasing_missing_vars(all_mdps(X_imp))
-            logger.info('total mdps ' + str(len(mdps)))
             for mdp in mdps:
-                logger.info('n_mis: ' + str(np.sum(np.isnan(X_imp))))
                 self.impute(X_imp, mdp)
 
         assert not np.any(np.isnan(X_imp)), 'invalid state, not all values imputed'
-        logger.info('completed')
         return X_imp
 
     def impute(self, X_imp, mdp):
@@ -56,7 +42,6 @@ class VineCopReg:
             miss_coords = np.where(np.any(np.isnan(X_imp), axis=1))[0]
         else:
             miss_vars = list(1 + np.where(mdp)[0])
-            logger.info('on mdp: ' + ','.join(map(str, miss_vars)))
             self.rng.shuffle(miss_vars)
             miss_coords = mdp_coords(X_imp, mdp)
         obs_vars = list(set(1 + np.arange(d)).difference(miss_vars))
@@ -80,10 +65,8 @@ class VineCopReg:
         cop = pv.Vinecop(structure=structure, pair_copulas=pcs)
 
         # fit to complete cases
-        logger.info('imputation order: ' + ','.join(map(str, miss_vars[::-1])))
         for k in range(len(miss_vars))[::-1]:
             var_mis = miss_vars[k]
-            logger.info('imputing: ' + str(var_mis))
             cop.select(X_imp, controls=self.controls)
             assert cop.order[k] == var_mis
             x_imp = simulate_order_k(cop, X_imp, k)
@@ -100,8 +83,6 @@ class VineCopFit:
         self.rng = np.random.default_rng(seed)
 
     def fit_transform(self, X_mis):
-        logger.info('started')
-
         # fit on complete cases
         cop_orig = pv.Vinecop(data=X_mis, controls=self.controls)
         T_orig = cop_orig.matrix
@@ -110,17 +91,13 @@ class VineCopFit:
 
         X_imp = np.copy(X_mis)
         if self.is_monotone:
-            logger.info('n_mis: ' + str(np.sum(np.isnan(X_imp))))
             self.impute(X_imp, [], T_orig, pcs_orig, d_orig)
         else:
             mdps = all_mdps(X_imp)
-            logger.info('total mdps ' + str(len(mdps)))
             for mdp in mdps:
-                logger.info('n_mis: ' + str(np.sum(np.isnan(X_imp))))
                 self.impute(X_imp, mdp, T_orig, pcs_orig, d_orig)
 
         assert not np.any(np.isnan(X_imp)), 'invalid state, not all values imputed'
-        logger.info('completed')
         return X_imp
 
     def impute(self, X_imp, mdp, T_orig, pcs_orig, d_orig):
@@ -132,13 +109,10 @@ class VineCopFit:
             miss_coords = np.where(np.any(np.isnan(X_imp), axis=1))[0]
         else:
             miss_vars = list(1 + np.where(mdp)[0])
-            logger.info('on mdp: ' + ','.join(map(str, miss_vars)))
             self.rng.shuffle(miss_vars)
             miss_coords = mdp_coords(X_imp, mdp)
 
-        logger.info('imputation order: ' + ','.join(map(str, miss_vars)))
         for cur_var_mis in miss_vars:
-            logger.info('imputing: ' + str(cur_var_mis))
             # remove as-yet missing values
             T, pcs = T_orig, pcs_orig
             for rest_var_mis in miss_vars[(miss_vars.index(cur_var_mis) + 1):]:

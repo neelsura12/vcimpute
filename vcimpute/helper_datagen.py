@@ -91,8 +91,10 @@ def mask_MCAR(X, pattern, mask_frac, seed, **kwargs):
         obs_coords = range(n)
         for k, _ in enumerate(miss_indices):
             n_rem_miss = n_max_mis - np.sum(np.isnan(X_mask))
+            if n_rem_miss <= 0:
+                break
             if k != (n_cols - 1):
-                n_this_mis = rng.integers(low=1, high=max(1, n_rem_miss) / (n_cols - k) + 1)
+                n_this_mis = rng.integers(low=1, high=max(2, n_rem_miss / (n_cols - k) + 1))
             else:
                 n_this_mis = n_rem_miss
             is_missing = rng.choice(obs_coords, n_this_mis, replace=False)
