@@ -1,3 +1,4 @@
+import os
 import logging
 import time
 from functools import partial
@@ -81,7 +82,7 @@ def run_per_mask(pattern, mask_fraction, X, n, d, rank, sigma, seed):
 
 def run_per_data(X, n, d, rank, sigma, seed, k):
     logger.info(f'on data n={n} d={d} rank={rank} sigma={sigma:.2f} k={k}')
-    pattern_lst = ['univariate', 'monotone', 'general']
+    pattern_lst = ['univariate', 'monotone']
     mask_fraction_lst = np.concatenate([
         np.arange(0.05, 0.1, 0.01),
         np.arange(0.1, 0.2, 0.05),
@@ -91,10 +92,12 @@ def run_per_data(X, n, d, rank, sigma, seed, k):
     R = 10
     for r in range(R):
         for pattern, mask_fraction in product(pattern_lst, mask_fraction_lst):
+            path = f'/Users/nshah/work/vcimpute/output/lrgc_{k}_{r}_{pattern}_{str(int(mask_fraction * 100))}.csv'
+            if os.path.isfile(path):
+                logger.info('skipping: ' + path)
+                continue
             out = f(pattern, mask_fraction)
-            (pd.DataFrame(out, index=np.arange(len(out))).to_csv(
-                f'/Users/nshah/work/vcimpute/output/lrgc_{k}_{r}_{pattern}_{str(int(mask_fraction * 100))}.csv',
-                index=False))
+            pd.DataFrame(out, index=np.arange(len(out))).to_csv(path, index=False)
 
 
 def run():
