@@ -5,6 +5,14 @@ def reindex_monotonic(X_mis):
     return np.argsort(np.sum(~np.isnan(X_mis), axis=0))[::-1]
 
 
+def all_mdps_idx(X_mis):
+    a = np.zeros(np.prod(X_mis.shape), dtype=np.uint64)
+    b = np.flatnonzero(np.isnan(X_mis))
+    a[b] = 1 + b % X_mis.shape[1]
+    a = a.reshape(X_mis.shape)
+    return a
+
+
 def all_mdps(X_mis):
     mdps = np.unique(np.isnan(X_mis), axis=0)
     mdps = mdps[np.any(mdps, axis=1), :]  # remove complete cases

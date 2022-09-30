@@ -135,7 +135,7 @@ class VineCopFit:
                 X_imp_sub = X_imp[:, [int(new_to_old[i + 1] - 1) for i in range(len(new_to_old))]]
 
                 if T_sub[d_sub - 2, 0] == cur_var_mis:
-                    cop_sub_diag = diagonalize_copula(cop_sub, old_to_new[cur_var_mis], self.bicop_family)
+                    cop_sub_diag = diagonalize_copula(cop_sub)
                     ximp_lst.append(simulate_order_k(cop_sub_diag, X_imp_sub, 0))
                     imputed = True
 
