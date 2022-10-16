@@ -13,7 +13,7 @@ def extend_vine(cop_in, U, new_to_old_map):
     CS = np.empty(shape=(d, d), dtype=object)
     CC1 = np.empty(shape=(d, d), dtype=object)
     CC2 = np.empty(shape=(d, d), dtype=object)
-    pair_copulas = make_triangular_array(4)
+    pair_copulas = make_triangular_array(d-1)
 
     for j in range(d - 2)[::-1]:
         for i in range(d - j - 2):
@@ -45,7 +45,7 @@ def extend_vine(cop_in, U, new_to_old_map):
                 CC1[i, j + 1] = f'{var1}|' + ','.join(sorted(CS[i, j + 1].split(',') + [str(var2)]))
                 CC2[i, j + 1] = f'{var2}|' + ','.join(sorted(CS[i, j + 1].split(',') + [str(var1)]))
 
-    bcop_controls = pv.FitControlsBicop(family_set=[pv.BicopFamily.gaussian])
+    bcop_controls = pv.FitControlsBicop(family_set=[pv.BicopFamily.gaussian]) # generify
 
     T_new = np.zeros(shape=(d, d), dtype=np.uint64)
     T_new[d - 1, 0] = d

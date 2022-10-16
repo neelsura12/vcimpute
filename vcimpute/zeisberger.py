@@ -1,4 +1,3 @@
-
 import numpy as np
 import pyvinecopulib as pv
 
@@ -8,7 +7,6 @@ from vcimpute.helper_subvines import find_subvine_structures, remove_var
 from vcimpute.helper_vinestructs import generate_r_vine_structure, relabel_vine_matrix
 from vcimpute.simulator import simulate_order_k
 from vcimpute.utils import get, bicop_family_map, make_triangular_array, is_leaf_in_all_subtrees
-
 
 
 class VineCopReg:

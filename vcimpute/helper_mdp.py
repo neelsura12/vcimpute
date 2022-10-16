@@ -5,11 +5,13 @@ def reindex_monotonic(X_mis):
     return np.argsort(np.sum(~np.isnan(X_mis), axis=0))[::-1]
 
 
-def all_mdps_idx(X_mis):
+def all_miss_vars(X_mis):
     a = np.zeros(np.prod(X_mis.shape), dtype=np.uint64)
     b = np.flatnonzero(np.isnan(X_mis))
     a[b] = 1 + b % X_mis.shape[1]
     a = a.reshape(X_mis.shape)
+    a = np.unique(a, axis=0)
+    a = a[~np.all(a == 0, axis=1)]  # remove complete cases
     return a
 
 
@@ -19,12 +21,21 @@ def all_mdps(X_mis):
     return mdps
 
 
+def miss_vars_to_mdp(miss_vars, d):
+    mdp = np.zeros(shape=(d,), dtype='bool')
+    mdp[np.array(miss_vars) - 1] = True
+    return mdp
+
+
 def sort_mdps_by_increasing_missing_vars(mdps):
     return mdps[np.argsort(np.count_nonzero(mdps, axis=1)), :]
 
 
-def sort_mdps_by_deccreasing_missing_count(X_mis, mdps):
-    return mdps[np.argsort([len(mdp_coords(X_mis, mdp)) for mdp in mdps])[::-1]]
+def sort_miss_vars_by_increasing_miss_vars(miss_vars):
+    assert isinstance(miss_vars, list)
+    n_miss_vars = list(map(len, miss_vars))
+    miss_vars = np.array(miss_vars, dtype='object')
+    return list(miss_vars[np.argsort(n_miss_vars)])
 
 
 def mdp_coords(X_mis, mdp):
