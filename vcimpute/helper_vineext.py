@@ -1,89 +1,70 @@
 import numpy as np
 import pyvinecopulib as pv
 
-from vcimpute.utils import make_triangular_array, get, vfunc, find
+from vcimpute.simulator import calculate_pseudo_obs
+from vcimpute.utils import get, find
 
 
-def extend_vine(cop_in, U, new_to_old_map):
-    d = len(cop_in.order) + 1
+def extend_vine(cop_in, U, U_add, family_set, num_threads):
+    CC1, CC2, CS, HF1, HF2 = calculate_pseudo_obs(cop_in, U, 0)
 
-    T = cop_in.matrix
-    HF1 = np.empty(shape=(d, d), dtype=object)
-    HF2 = np.empty(shape=(d, d), dtype=object)
-    CS = np.empty(shape=(d, d), dtype=object)
-    CC1 = np.empty(shape=(d, d), dtype=object)
-    CC2 = np.empty(shape=(d, d), dtype=object)
-    pair_copulas = make_triangular_array(d-1)
+    bcop_controls = pv.FitControlsBicop(family_set=family_set, num_threads=num_threads)
 
-    for j in range(d - 2)[::-1]:
-        for i in range(d - j - 2):
-            pair_copulas[i][j + 1] = cop_in.get_pair_copula(i, j)
-            var1 = cop_in.order[j]
-            var2 = T[i, j]
-            CS[i][j + 1] = ','.join(list(map(str, sorted(T[:i, j]))))
-            if CS[i, j + 1] == '':
-                arg1 = get(U, new_to_old_map[var1])
-                arg2 = get(U, new_to_old_map[var2])
-                HF1[i, j + 1] = vfunc(cop_in.get_pair_copula(i, j).hfunc2, arg1, arg2)
-                HF2[i, j + 1] = vfunc(cop_in.get_pair_copula(i, j).hfunc1, arg1, arg2)
-                CC1[i, j + 1] = f'{var1}|{var2}'
-                CC2[i, j + 1] = f'{var2}|{var1}'
-            else:
-                arg1, arg2 = None, None
-                key1 = f'{var1}|{CS[i, j + 1]}'
-                key2 = f'{var2}|{CS[i, j + 1]}'
-                for CC, HF in zip([CC1, CC2], [HF1, HF2]):
-                    coord = find(CC, key1)
-                    if (arg1 is None) and (coord is not None):
-                        arg1 = HF[coord]
-                    coord = find(CC, key2)
-                    if (arg2 is None) and (coord is not None):
-                        arg2 = HF[coord]
-                assert (arg1 is not None) and (arg2 is not None)
-                HF1[i, j + 1] = vfunc(cop_in.get_pair_copula(i, j).hfunc2, arg1, arg2)
-                HF2[i, j + 1] = vfunc(cop_in.get_pair_copula(i, j).hfunc1, arg1, arg2)
-                CC1[i, j + 1] = f'{var1}|' + ','.join(sorted(CS[i, j + 1].split(',') + [str(var2)]))
-                CC2[i, j + 1] = f'{var2}|' + ','.join(sorted(CS[i, j + 1].split(',') + [str(var1)]))
+    d_in = len(cop_in.order)
+    d_out = d_in + 1
+    T_in = cop_in.matrix
+    T_out = np.zeros(shape=(d_out, d_out), dtype=np.uint64)
+    T_out[:-1, 1:] = T_in
+    T_out[d_out - 1, 0] = d_out
+    avail_vars = sorted(cop_in.order)
 
-    bcop_controls = pv.FitControlsBicop(family_set=[pv.BicopFamily.gaussian]) # generify
+    # connect to first tree
+    vec1 = U_add
+    lst_of_vec = [get(U, i)[:, None] for i in avail_vars]
+    idx = get_argmax_kt(vec1, lst_of_vec)
+    T_out[0, 0] = avail_vars[idx]
+    del avail_vars[idx]
+    bcop = pv.Bicop(data=np.hstack([vec1, lst_of_vec[idx]]), controls=bcop_controls)
+    vec1 = bcop.hfunc2(np.hstack([vec1, lst_of_vec[idx]]))[:, None]
 
-    T_new = np.zeros(shape=(d, d), dtype=np.uint64)
-    T_new[d - 1, 0] = d
-    T_new[:-1, 1:] = cop_in.matrix
-
-    j = 0
-    for i in range(d - 1):
-        var1 = d
-        var2 = cop_in.order[d - i - 2]
-        T_new[i, j] = var2
-        CS[i, j] = ','.join(list(map(str, sorted(T_new[:i, j]))))
-        if CS[i, j] == '':
-            arg1 = get(U, new_to_old_map[var1])
-            arg2 = get(U, new_to_old_map[var2])
-            bcop = pv.Bicop(data=np.vstack([arg1, arg2]).T, controls=bcop_controls)
-            pair_copulas[i][j] = bcop
-            HF1[i, j] = vfunc(bcop.hfunc2, arg1, arg2)
-            HF2[i, j] = vfunc(bcop.hfunc1, arg1, arg2)
-            CC1[i, j] = f'{var1}|{var2}'
-            CC2[i, j] = f'{var2}|{var1}'
-        else:
-            arg1, arg2 = None, None
-            key1 = f'{var1}|{CS[i, j]}'
-            key2 = f'{var2}|{CS[i, j]}'
+    # connect to remaining trees
+    for t in range(1, d_out - 1):
+        lst_of_vec = []
+        eligible_vars = []
+        for var in avail_vars:
+            cs = ','.join((map(str, sorted(T_out[:t, 0]))))
+            key = f'{var}|{cs}'
             for CC, HF in zip([CC1, CC2], [HF1, HF2]):
-                coord = find(CC, key1)
-                if (arg1 is None) and (coord is not None):
-                    arg1 = HF[coord]
-                coord = find(CC, key2)
-                if (arg2 is None) and (coord is not None):
-                    arg2 = HF[coord]
-            assert (arg1 is not None) and (arg2 is not None)
-            bcop = pv.Bicop(data=np.vstack([arg1, arg2]).T, controls=bcop_controls)
-            pair_copulas[i][j] = bcop
-            HF1[i, j] = vfunc(bcop.hfunc2, arg1, arg2)
-            HF2[i, j] = vfunc(bcop.hfunc1, arg1, arg2)
-            CC1[i, j] = f'{var1}|' + ','.join(sorted(CS[i, j].split(',') + [str(var2)]))
-            CC2[i, j] = f'{var2}|' + ','.join(sorted(CS[i, j].split(',') + [str(var1)]))
+                coord = find(key, CC)
+                if coord is not None:
+                    eligible_vars.append(var)
+                    lst_of_vec.append(HF[coord])
+        lst_of_vec = [vec[:, None] for vec in lst_of_vec]
+        idx = get_argmax_kt(vec1, lst_of_vec)
+        T_out[t, 0] = eligible_vars[idx]
+        del avail_vars[avail_vars.index(T_out[t, 0])]
+        bcop = pv.Bicop(data=np.hstack([vec1, lst_of_vec[idx]]), controls=bcop_controls)
+        vec1 = bcop.hfunc2(np.hstack([vec1, lst_of_vec[idx]]))[:, None]
 
-    cop_out = pv.Vinecop(T_new, pair_copulas)
+    # make extended copula
+    vcop_controls = pv.FitControlsVinecop(family_set=family_set, num_threads=num_threads)
+    cop_out = pv.Vinecop(structure=pv.RVineStructure(T_out))
+    cop_out.select(data=np.hstack([U, U_add]), controls=vcop_controls)
     return cop_out
+
+
+def get_abs_kt(vec1, vec2):
+    bcop_controls = pv.FitControlsBicop(family_set=[pv.BicopFamily.gaussian])
+    bcop = pv.Bicop(data=np.hstack([vec1, vec2]), controls=bcop_controls)
+    return np.abs(bcop.parameters_to_tau(bcop.parameters))
+
+
+def get_argmax_kt(vec1, lst_of_vec):
+    max_kt = -1
+    max_i = None
+    for i, vec2 in enumerate(lst_of_vec):
+        kt = get_abs_kt(vec1, vec2)
+        if kt > max_kt:
+            max_i = i
+            max_kt = kt
+    return max_i
