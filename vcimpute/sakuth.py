@@ -3,7 +3,9 @@ import pyvinecopulib as pv
 
 from vcimpute.helper_choicetree import make_tree, is_in_tree
 from vcimpute.helper_diagonalize import diagonalize_matrix
-from vcimpute.helper_mdp import all_miss_vars, mdp_coords, old_to_new
+from vcimpute.helper_mdp import all_miss_vars, mdp_coords, old_to_new, sort_miss_vars_by_increasing_miss_vars
+from vcimpute.helper_vineext import extend_vine
+from vcimpute.helper_vinestructs import relabel_vine_matrix
 from vcimpute.utils import bicop_family_map, get_order
 
 
@@ -11,7 +13,8 @@ class MdpFit:
 
     def __init__(self, bicop_family, num_threads, seed):
         self.bicop_family = bicop_family_map[bicop_family]
-        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=num_threads)
+        self.num_threads = num_threads
+        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=self.num_threads)
         self.rng = np.random.default_rng(seed)
         self.X_imp = None
         self.cop = None
@@ -20,25 +23,52 @@ class MdpFit:
     def fit_transform(self, X_mis):
         self.d = X_mis.shape[1]
         self.X_imp = np.copy(X_mis)
-        self.cop = pv.Vinecop(d=self.d)
+        all_vars = 1 + np.arange(self.d, dtype='uint64')
 
+        self.cop = pv.Vinecop(d=self.d)
         self.cop.select(self.X_imp, self.controls)
+        while np.any(np.isnan(self.X_imp)):
+            non_adhoc_patterns = self.impute_adhoc()
+            non_adhoc_patterns = sort_miss_vars_by_increasing_miss_vars(non_adhoc_patterns)
+            miss_vars = non_adhoc_patterns[0]
+            assert len(miss_vars) < self.d - 1
+            rest_vars = np.setdiff1d(all_vars, miss_vars)
+            cop_in = pv.Vinecop(d=len(rest_vars))
+            U = self.X_imp[:, rest_vars - 1]
+            cop_in.select(U, self.controls)
+            old_to_new = {k: (i + 1) for i, k in enumerate(rest_vars)}
+            T_out = None
+            for var in miss_vars:
+                U_add = self.X_imp[:, [int(var - 1)]]
+                T_out = extend_vine(cop_in, U, U_add, [self.bicop_family], self.num_threads)
+                cop_in = pv.Vinecop(structure=pv.RVineStructure(T_out))
+                U = np.hstack([U, U_add])
+                cop_in.select(data=U, controls=self.controls)
+                old_to_new[var] = U.shape[1]
+            new_to_old = {v: k for k, v in old_to_new.items()}
+            T = relabel_vine_matrix(T_out, new_to_old)
+            structure = pv.RVineStructure(T)
+            self.cop = pv.Vinecop(structure=structure)
+            self.cop.select(self.X_imp, self.controls)
+            self.impute(miss_vars)
+
+        return self.X_imp
+
+    def impute_adhoc(self):
         root = make_tree(self.cop.matrix)
         mdp_vars = all_miss_vars(self.X_imp)
         mdp_vars_ordered = get_ordered_miss_vars(mdp_vars, get_order(diagonalize_matrix(self.cop.matrix)))
 
         non_adhoc_patterns = []
         for miss_vars in mdp_vars_ordered:
-            # impute ad-hoc imputable
             if is_in_tree(root, miss_vars):
                 self.impute(miss_vars)
             else:
                 non_adhoc_patterns.append(miss_vars)
-
-        return self.X_imp, non_adhoc_patterns
+        return non_adhoc_patterns
 
     def impute(self, miss_vars):
-        miss_vars = np.array(miss_vars)
+        miss_vars = np.array(miss_vars, dtype='uint64')
         miss_idx = miss_vars - 1
         mdp = np.zeros(shape=(self.d,), dtype='bool')
         mdp[miss_idx] = True

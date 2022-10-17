@@ -46,11 +46,7 @@ def extend_vine(cop_in, U, U_add, family_set, num_threads):
         bcop = pv.Bicop(data=np.hstack([vec1, lst_of_vec[idx]]), controls=bcop_controls)
         vec1 = bcop.hfunc2(np.hstack([vec1, lst_of_vec[idx]]))[:, None]
 
-    # make extended copula
-    vcop_controls = pv.FitControlsVinecop(family_set=family_set, num_threads=num_threads)
-    cop_out = pv.Vinecop(structure=pv.RVineStructure(T_out))
-    cop_out.select(data=np.hstack([U, U_add]), controls=vcop_controls)
-    return cop_out
+    return T_out
 
 
 def get_abs_kt(vec1, vec2):
