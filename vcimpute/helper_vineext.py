@@ -64,3 +64,12 @@ def get_argmax_kt(vec1, lst_of_vec):
             max_i = i
             max_kt = kt
     return max_i
+
+
+def order_miss_vars_by_incr_kendall_tau(miss_vars, rest_vars, U):
+    m = len(rest_vars)
+    abs_kts = {}
+    for miss_var in miss_vars:
+        for rest_var in rest_vars:
+            abs_kts[miss_var] += get_abs_kt(get(U, miss_var)[:, None], get(U, rest_var)[:, None]) / m
+    return sorted(abs_kts, key=abs_kts.get)

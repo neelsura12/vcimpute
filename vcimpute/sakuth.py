@@ -4,8 +4,8 @@ import pyvinecopulib as pv
 from vcimpute.helper_choicetree import make_tree, is_in_tree
 from vcimpute.helper_diagonalize import diagonalize_matrix
 from vcimpute.helper_mdp import all_miss_vars, mdp_coords, old_to_new, sort_miss_vars_by_increasing_miss_vars
-from vcimpute.helper_vineext import extend_vine
-from vcimpute.helper_vinestructs import relabel_vine_matrix
+from vcimpute.helper_vineext import extend_vine, order_miss_vars_by_incr_kendall_tau
+from vcimpute.helper_vinestructs import relabel_vine_matrix, generate_r_vine_structure
 from vcimpute.utils import bicop_family_map, get_order
 
 
@@ -31,23 +31,26 @@ class MdpFit:
             non_adhoc_patterns = self.impute_adhoc()
             non_adhoc_patterns = sort_miss_vars_by_increasing_miss_vars(non_adhoc_patterns)
             miss_vars = non_adhoc_patterns[0]
-            assert len(miss_vars) < self.d - 1
             rest_vars = np.setdiff1d(all_vars, miss_vars)
-            cop_in = pv.Vinecop(d=len(rest_vars))
-            U = self.X_imp[:, rest_vars - 1]
-            cop_in.select(U, self.controls)
-            old_to_new = {k: (i + 1) for i, k in enumerate(rest_vars)}
-            T_out = None
-            for var in miss_vars:
-                U_add = self.X_imp[:, [int(var - 1)]]
-                T_out = extend_vine(cop_in, U, U_add, [self.bicop_family], self.num_threads)
-                cop_in = pv.Vinecop(structure=pv.RVineStructure(T_out))
-                U = np.hstack([U, U_add])
-                cop_in.select(data=U, controls=self.controls)
-                old_to_new[var] = U.shape[1]
-            new_to_old = {v: k for k, v in old_to_new.items()}
-            T = relabel_vine_matrix(T_out, new_to_old)
-            structure = pv.RVineStructure(T)
+            miss_vars = order_miss_vars_by_incr_kendall_tau(miss_vars, rest_vars, self.X_imp)
+            if len(miss_vars) < self.d - 1:
+                cop_in = pv.Vinecop(d=len(rest_vars))
+                U = self.X_imp[:, rest_vars - 1]
+                cop_in.select(U, self.controls)
+                old_to_new = {k: (i + 1) for i, k in enumerate(rest_vars)}
+                T_out = None
+                for var in miss_vars:
+                    U_add = self.X_imp[:, [int(var - 1)]]
+                    T_out = extend_vine(cop_in, U, U_add, [self.bicop_family], self.num_threads)
+                    cop_in = pv.Vinecop(structure=pv.RVineStructure(T_out))
+                    U = np.hstack([U, U_add])
+                    cop_in.select(data=U, controls=self.controls)
+                    old_to_new[var] = U.shape[1]
+                new_to_old = {v: k for k, v in old_to_new.items()}
+                T = relabel_vine_matrix(T_out, new_to_old)
+                structure = pv.RVineStructure(T)
+            else:
+                structure = generate_r_vine_structure(miss_vars, rest_vars)
             self.cop = pv.Vinecop(structure=structure)
             self.cop.select(self.X_imp, self.controls)
             self.impute(miss_vars)
