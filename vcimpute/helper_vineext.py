@@ -21,7 +21,7 @@ def extend_vine(cop_in, U, U_add, family_set, num_threads):
     # connect to first tree
     vec1 = U_add
     lst_of_vec = [get(U, i)[:, None] for i in avail_vars]
-    idx = get_argmax_kt(vec1, lst_of_vec)
+    idx = get_argmax_kt(vec1, lst_of_vec, family_set)
     T_out[0, 0] = avail_vars[idx]
     del avail_vars[idx]
     bcop = pv.Bicop(data=np.hstack([vec1, lst_of_vec[idx]]), controls=bcop_controls)
@@ -40,7 +40,7 @@ def extend_vine(cop_in, U, U_add, family_set, num_threads):
                     eligible_vars.append(var)
                     lst_of_vec.append(HF[coord])
         lst_of_vec = [vec[:, None] for vec in lst_of_vec]
-        idx = get_argmax_kt(vec1, lst_of_vec)
+        idx = get_argmax_kt(vec1, lst_of_vec, family_set)
         T_out[t, 0] = eligible_vars[idx]
         del avail_vars[avail_vars.index(T_out[t, 0])]
         bcop = pv.Bicop(data=np.hstack([vec1, lst_of_vec[idx]]), controls=bcop_controls)
@@ -49,28 +49,28 @@ def extend_vine(cop_in, U, U_add, family_set, num_threads):
     return T_out
 
 
-def get_abs_kt(vec1, vec2):
-    bcop_controls = pv.FitControlsBicop(family_set=[pv.BicopFamily.gaussian])
+def get_abs_kt(vec1, vec2, family_set):
+    bcop_controls = pv.FitControlsBicop(family_set=family_set)
     bcop = pv.Bicop(data=np.hstack([vec1, vec2]), controls=bcop_controls)
     return np.abs(bcop.parameters_to_tau(bcop.parameters))
 
 
-def get_argmax_kt(vec1, lst_of_vec):
+def get_argmax_kt(vec1, lst_of_vec, family_set):
     max_kt = -1
     max_i = None
     for i, vec2 in enumerate(lst_of_vec):
-        kt = get_abs_kt(vec1, vec2)
+        kt = get_abs_kt(vec1, vec2, family_set)
         if kt > max_kt:
             max_i = i
             max_kt = kt
     return max_i
 
 
-def order_miss_vars_by_incr_kendall_tau(miss_vars, rest_vars, U):
+def order_miss_vars_by_incr_kendall_tau(miss_vars, rest_vars, U, family_set):
     m = len(rest_vars)
     abs_kts = {}
     for miss_var in miss_vars:
         abs_kts[miss_var] = 0
         for rest_var in rest_vars:
-            abs_kts[miss_var] += get_abs_kt(get(U, miss_var)[:, None], get(U, rest_var)[:, None]) / m
+            abs_kts[miss_var] += get_abs_kt(get(U, miss_var)[:, None], get(U, rest_var)[:, None], family_set) / m
     return sorted(abs_kts, key=abs_kts.get)

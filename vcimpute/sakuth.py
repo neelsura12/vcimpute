@@ -24,7 +24,7 @@ class MdpFit:
         self.d = X_mis.shape[1]
         self.X_imp = np.copy(X_mis)
         all_vars = 1 + np.arange(self.d, dtype='uint64')
-
+        family_set = [self.bicop_family]
         self.cop = pv.Vinecop(d=self.d)
         self.cop.select(self.X_imp, self.controls)
         while np.any(np.isnan(self.X_imp)):
@@ -32,7 +32,7 @@ class MdpFit:
             non_adhoc_patterns = sort_miss_vars_by_increasing_miss_vars(non_adhoc_patterns)
             miss_vars = non_adhoc_patterns[0]
             rest_vars = np.setdiff1d(all_vars, miss_vars)
-            miss_vars = order_miss_vars_by_incr_kendall_tau(miss_vars, rest_vars, self.X_imp)
+            miss_vars = order_miss_vars_by_incr_kendall_tau(miss_vars, rest_vars, self.X_imp, family_set)
             if len(miss_vars) < self.d - 1:
                 cop_in = pv.Vinecop(d=len(rest_vars))
                 U = self.X_imp[:, rest_vars - 1]
@@ -41,7 +41,7 @@ class MdpFit:
                 T_out = None
                 for var in miss_vars:
                     U_add = self.X_imp[:, [int(var - 1)]]
-                    T_out = extend_vine(cop_in, U, U_add, [self.bicop_family], self.num_threads)
+                    T_out = extend_vine(cop_in, U, U_add, family_set, self.num_threads)
                     cop_in = pv.Vinecop(structure=pv.RVineStructure(T_out))
                     U = np.hstack([U, U_add])
                     cop_in.select(data=U, controls=self.controls)
