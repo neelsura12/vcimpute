@@ -81,7 +81,7 @@ def run_per_data(X, n, d, seed, copula_type, vine_structure, k):
                 logger.info('skipping: ' + path)
                 continue
             out = f(pattern, mask_fraction)
-            pd.DataFrame(out, index=np.arange(len(out))).to_csv(path, index=False)
+            pd.DataFrame.from_records(out, index=[0]).to_csv(path, index=False)
 
 
 def run():

@@ -35,7 +35,7 @@ def impute(X, X_mis, seed, **kwargs):
     vine_structure = 'R' if kwargs['vine_structure'] is None else kwargs['vine_structure']
     tagged_models = [
         (GaussianCopula(random_state=seed), 'gcimpute'),
-        (MdpFit(bicop_family=kwargs['copula_type'], num_threads=10, seed=seed), f'mdpfit{vine_structure}'),
+        (MdpFit(bicop_family=kwargs['copula_type'], num_threads=10, seed=seed), f'mdpfit{vine_structure}')
     ]
     for model, tag in tagged_models:
         logger.info(f'running {tag}')
@@ -95,7 +95,7 @@ def run_per_data(X, n, d, seed, copula_type, vine_structure, k):
                 logger.info('skipping: ' + path)
                 continue
             out = f(pattern, mask_fraction)
-            pd.DataFrame(out, index=np.arange(len(out))).to_csv(path, index=False)
+            pd.DataFrame.from_records(out, index=[0]).to_csv(path, index=False)
 
 
 def run():
