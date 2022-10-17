@@ -83,11 +83,11 @@ def run_per_data(X, n, d, seed, copula_type, vine_structure, k):
     pattern_lst = ['univariate', 'monotone']
     mask_fraction_lst = np.concatenate([
         np.arange(0.05, 0.1, 0.01),
-        np.arange(0.1, 0.2, 0.05),
+        np.arange(0.1, 0.2, 0.02),
         [0.2]
     ])
     f = partial(run_per_mask, X=X, n=n, d=d, copula_type=copula_type, vine_structure=vine_structure, seed=seed)
-    R = 10
+    R = 1
     for r in range(R):
         for pattern, mask_fraction in product(pattern_lst, mask_fraction_lst):
             path = f'/Users/nshah/work/vcimpute/output/copula_{k}_{r}_{pattern}_{str(int(mask_fraction * 100))}.csv'
@@ -100,7 +100,7 @@ def run_per_data(X, n, d, seed, copula_type, vine_structure, k):
 
 def run():
     n = 1000
-    d_lst = np.arange(5, 21, 3)
+    d_lst = np.arange(5, 21, 1)
     copula_type_lst = ['gaussian', 'clayton', 'frank']
     vine_structure_lst = [None, 'R', 'C', 'D']
 

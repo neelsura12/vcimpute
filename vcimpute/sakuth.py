@@ -15,7 +15,6 @@ class MdpFit:
         self.bicop_family = bicop_family_map[bicop_family]
         self.num_threads = num_threads
         self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=self.num_threads)
-        self.rng = np.random.default_rng(seed)
         self.X_imp = None
         self.cop = None
         self.d = None
@@ -29,6 +28,8 @@ class MdpFit:
         self.cop.select(self.X_imp, self.controls)
         while np.any(np.isnan(self.X_imp)):
             non_adhoc_patterns = self.impute_adhoc()
+            if len(non_adhoc_patterns) == 0:
+                non_adhoc_patterns = all_miss_vars(self.X_imp)
             non_adhoc_patterns = sort_miss_vars_by_increasing_miss_vars(non_adhoc_patterns)
             miss_vars = non_adhoc_patterns[0]
             rest_vars = np.setdiff1d(all_vars, miss_vars)
