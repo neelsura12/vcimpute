@@ -32,7 +32,6 @@ def sort_mdps_by_increasing_missing_vars(mdps):
 
 
 def sort_miss_vars_by_increasing_miss_vars(miss_vars):
-    assert isinstance(miss_vars, list)
     n_miss_vars = list(map(len, miss_vars))
     miss_vars = np.array(miss_vars, dtype='object')
     return list(miss_vars[np.argsort(n_miss_vars)])

@@ -28,8 +28,8 @@ class MdpFit:
         self.cop.select(self.X_imp, self.controls)
         while np.any(np.isnan(self.X_imp)):
             non_adhoc_patterns = self.impute_adhoc()
-            if len(non_adhoc_patterns) == 0:
-                non_adhoc_patterns = all_miss_vars(self.X_imp)
+            if not np.any(np.isnan(self.X_imp)):
+                break
             non_adhoc_patterns = sort_miss_vars_by_increasing_miss_vars(non_adhoc_patterns)
             miss_vars = non_adhoc_patterns[0]
             rest_vars = np.setdiff1d(all_vars, miss_vars)
@@ -55,6 +55,8 @@ class MdpFit:
             self.cop = pv.Vinecop(structure=structure)
             self.cop.select(self.X_imp, self.controls)
             self.impute(miss_vars)
+            if not np.any(np.isnan(self.X_imp)):
+                break
 
         return self.X_imp
 
