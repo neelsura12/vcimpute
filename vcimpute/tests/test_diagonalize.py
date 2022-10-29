@@ -46,7 +46,7 @@ def test_diagonalize_copula1():
         [1, 0, 0],
     ], dtype=np.uint64)
     cop1 = pv.Vinecop(T, pair_copulas)
-    cop2 = diagonalize_copula(cop1)
+    cop2 = diagonalize_copula(cop1, diagonalize_matrix(cop1.matrix))
     assert cop2.get_pair_copula(0, 0).parameters[0][0] == 0.25
     assert cop2.get_pair_copula(0, 1).parameters[0][0] == 0.5
     assert cop2.get_pair_copula(1, 0).parameters[0][0] == 0.1
@@ -68,6 +68,6 @@ def test_diagonalize_copula2():
         [1, 0, 0, 0]
     ], dtype=np.uint64)
     cop1 = pv.Vinecop(T, pair_copulas)
-    cop2 = diagonalize_copula(cop1)
+    cop2 = diagonalize_copula(cop1, diagonalize_matrix(cop1.matrix))
     assert cop2.get_pair_copula(0, 1).parameters[0][0] == 0.75
     assert cop2.get_pair_copula(0, 2).parameters[0][0] == 0.5

@@ -92,7 +92,7 @@ def run():
 
     seed = 0
     k = 0
-    for d in d_lst[::-1]:
+    for d in d_lst:
         for copula_type in copula_type_lst:
             for vine_structure in vine_structure_lst:
                 if (vine_structure is None) and (copula_type == 'gaussian'):

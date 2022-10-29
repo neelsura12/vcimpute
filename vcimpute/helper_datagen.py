@@ -2,6 +2,7 @@ import numpy as np
 import pyvinecopulib as pv
 from gcimpute.helper_data import generate_sigma, generate_LRGC, generate_mixed_from_gc
 from gcimpute.helper_mask import mask_MCAR as gcimpute_mask_MCAR
+from scipy.stats import norm
 from statsmodels.distributions.empirical_distribution import ECDF
 
 from vcimpute.utils import make_triangular_array
@@ -17,23 +18,23 @@ def make_complete_data_matrix(n, d, copula_type, seed, **kwargs):
     if copula_type == 'LRGC':
         assert 'sigma' in kwargs, 'LRGC needs param sigma'
         assert 'rank' in kwargs, 'LRGC needs param rank'
-        X, _ = generate_LRGC(
+        U, _ = generate_LRGC(
             var_types={'cont': list(range(d))},
             rank=kwargs['rank'],
             sigma=kwargs['sigma'],
             n=n,
+            cont_transform=lambda x: norm.cdf(x),
             seed=seed
         )
-        U = probability_integral_transform(X)
     elif copula_type == 'gaussian' and ('vine_structure' not in kwargs):
         sigma = generate_sigma(p=d)
-        X = generate_mixed_from_gc(
+        U = generate_mixed_from_gc(
             var_types={'cont': list(range(d))},
             n=n,
             sigma=sigma,
+            cont_transform=lambda x: norm.cdf(x),
             seed=seed
         )
-        U = probability_integral_transform(X)
     elif copula_type in ('gaussian', 'student', 'clayton', 'frank'):
         assert 'vine_structure' in kwargs, 'copula sim needs param vine_structure'
         assert kwargs['vine_structure'] in ['C', 'D', 'R'], 'vine structure must be C, D or R'

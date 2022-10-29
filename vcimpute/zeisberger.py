@@ -1,8 +1,8 @@
 import numpy as np
 import pyvinecopulib as pv
 
-from vcimpute.helper_diagonalize import diagonalize_copula
-from vcimpute.helper_mdp import all_mdps, sort_mdps_by_increasing_missing_vars, mdp_coords, count_missing_by_col
+from vcimpute.helper_diagonalize import diagonalize_copula, diagonalize_matrix, diagonalize_matrix2
+from vcimpute.helper_mdp import all_mdps, sort_mdps_by_increasing_missing_vars, count_missing_by_col, mdp_coords
 from vcimpute.helper_subvines import find_subvine_structures, remove_var
 from vcimpute.helper_vinestructs import generate_r_vine_structure, relabel_vine_matrix
 from vcimpute.simulator import simulate_order_k
@@ -133,7 +133,10 @@ class VineCopFit:
                 X_imp_sub = X_imp[:, [int(new_to_old[i + 1] - 1) for i in range(len(new_to_old))]]
 
                 if T_sub[d_sub - 2, 0] == cur_var_mis:
-                    cop_sub_diag = diagonalize_copula(cop_sub)
+                    T_sub_diag = diagonalize_matrix(T_sub)
+                    if T_sub[d_sub - 2, 0] == cur_var_mis:
+                        T_sub_diag = diagonalize_matrix2(T_sub)
+                    cop_sub_diag = diagonalize_copula(cop_sub, T_sub_diag)
                     ximp_lst.append(simulate_order_k(cop_sub_diag, X_imp_sub, 0))
                     imputed = True
 
