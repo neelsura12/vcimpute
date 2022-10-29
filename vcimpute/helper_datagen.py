@@ -27,7 +27,7 @@ def make_complete_data_matrix(n, d, copula_type, seed, **kwargs):
             seed=seed
         )
     elif copula_type == 'gaussian' and ('vine_structure' not in kwargs):
-        sigma = generate_sigma(p=d)
+        sigma = kwargs['sigma'] if 'sigma' in kwargs else generate_sigma(p=d)
         U = generate_mixed_from_gc(
             var_types={'cont': list(range(d))},
             n=n,

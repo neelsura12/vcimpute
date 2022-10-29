@@ -133,10 +133,10 @@ class VineCopFit:
                 X_imp_sub = X_imp[:, [int(new_to_old[i + 1] - 1) for i in range(len(new_to_old))]]
 
                 if T_sub[d_sub - 2, 0] == cur_var_mis:
-                    T_sub_diag = diagonalize_matrix(T_sub)
-                    if T_sub[d_sub - 2, 0] == cur_var_mis:
-                        T_sub_diag = diagonalize_matrix2(T_sub)
-                    cop_sub_diag = diagonalize_copula(cop_sub, T_sub_diag)
+                    T_sub_relabel_diag = diagonalize_matrix(T_sub_relabel)
+                    if T_sub_relabel_diag[d_sub - 2, 0] == old_to_new[cur_var_mis]:
+                        T_sub_relabel_diag = diagonalize_matrix2(T_sub_relabel_diag)
+                    cop_sub_diag = diagonalize_copula(cop_sub, T_sub_relabel_diag)
                     ximp_lst.append(simulate_order_k(cop_sub_diag, X_imp_sub, 0))
                     imputed = True
 

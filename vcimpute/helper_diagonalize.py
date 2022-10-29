@@ -51,16 +51,17 @@ def diagonalize_matrix(T1):
 
 
 def diagonalize_matrix2(T1):
+    assert is_diagonal_matrix(T1)
     d = T1.shape[0]
     T2 = np.copy(T1)
     m1 = T2[d - 1, 0]
     m2 = T2[d - 2, 0]
-    assert is_diagonal_matrix(T1)
     T2[d - 1, 0] = m2
     T2[d - 2, :2] = m1
     r1 = np.copy(T2[:d - 2, 0])
     T2[:d - 2, 0] = T2[:d - 2, 1]
     T2[:d - 2, 1] = r1
+    T2 = diagonalize_matrix(T2)
     return T2
 
 
