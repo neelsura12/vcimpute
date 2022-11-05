@@ -60,4 +60,4 @@ def profiled_run(seed):
 
 if __name__ == '__main__':
     out = Parallel(n_jobs=-1)(delayed(profiled_run)(seed) for seed in range(100))
-    pickle.dump(out, open('experiment1.pkl', 'wb'))
+    pickle.dump(out, open('../../data/experiment1.pkl', 'wb'))
