@@ -17,6 +17,8 @@ class VineCopReg:
         self.vine_structure = vine_structure
         self.is_monotone = is_monotone
         self.rng = np.random.default_rng(seed)
+        self.n_fits = 0
+        self.n_sims = 0
 
     def fit_transform(self, X_mis):
         X_imp = np.copy(X_mis)
@@ -66,11 +68,14 @@ class VineCopReg:
         for k in range(len(miss_vars))[::-1]:
             var_mis = miss_vars[k]
             cop.select(X_imp, controls=self.controls)
+            self.n_fits += 1
             assert cop.order[k] == var_mis
             x_imp = simulate_order_k(cop, X_imp, k)
+            self.n_sims += 1
             x_mis = get(X_imp, var_mis)
             assert not np.any(np.isnan(x_imp[miss_coords])), 'check imputation order'
             x_mis[miss_coords] = x_imp[miss_coords]
+
 
 
 class VineCopFit:
@@ -79,10 +84,13 @@ class VineCopFit:
         self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=num_threads)
         self.is_monotone = is_monotone
         self.rng = np.random.default_rng(seed)
+        self.n_fits = 0
+        self.n_sims = 0
 
     def fit_transform(self, X_mis):
         # fit on complete cases
         cop_orig = pv.Vinecop(data=X_mis, controls=self.controls)
+        self.n_fits += 1
         T_orig = cop_orig.matrix
         pcs_orig = cop_orig.pair_copulas
         d_orig = T_orig.shape[0]
@@ -138,10 +146,12 @@ class VineCopFit:
                         T_sub_relabel_diag = diagonalize_matrix2(T_sub_relabel_diag)
                     cop_sub_diag = diagonalize_copula(cop_sub, T_sub_relabel_diag)
                     ximp_lst.append(simulate_order_k(cop_sub_diag, X_imp_sub, 0))
+                    self.n_sims += 1
                     imputed = True
 
                 if T_sub[d_sub - 1, 0] == cur_var_mis:
                     ximp_lst.append(simulate_order_k(cop_sub, X_imp_sub, 0))
+                    self.n_sims += 1
                     imputed = True
 
                 # only keep the last imputation since it uses all available information

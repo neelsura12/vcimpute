@@ -18,6 +18,8 @@ class MdpFit:
         self.X_imp = None
         self.cop = None
         self.d = None
+        self.n_fits = 0
+        self.n_sims = 0
 
     def fit_transform(self, X_mis):
         self.d = X_mis.shape[1]
@@ -26,6 +28,7 @@ class MdpFit:
         family_set = [self.bicop_family]
         self.cop = pv.Vinecop(d=self.d)
         self.cop.select(self.X_imp, self.controls)
+        self.n_fits += 1
         while np.any(np.isnan(self.X_imp)):
             non_adhoc_patterns = self.impute_adhoc()
             if not np.any(np.isnan(self.X_imp)):
@@ -38,6 +41,7 @@ class MdpFit:
                 cop_in = pv.Vinecop(d=len(rest_vars))
                 U = self.X_imp[:, rest_vars - 1]
                 cop_in.select(U, self.controls)
+                self.n_fits += 1
                 old_to_new = {k: (i + 1) for i, k in enumerate(rest_vars)}
                 T_out = None
                 for var in miss_vars:
@@ -46,6 +50,7 @@ class MdpFit:
                     cop_in = pv.Vinecop(structure=pv.RVineStructure(T_out))
                     U = np.hstack([U, U_add])
                     cop_in.select(data=U, controls=self.controls)
+                    self.n_fits += 1
                     old_to_new[var] = U.shape[1]
                 new_to_old = {v: k for k, v in old_to_new.items()}
                 T = relabel_vine_matrix(T_out, new_to_old)
@@ -54,7 +59,9 @@ class MdpFit:
                 structure = generate_r_vine_structure(miss_vars, rest_vars)
             self.cop = pv.Vinecop(structure=structure)
             self.cop.select(self.X_imp, self.controls)
+            self.n_fits += 1
             self.impute(miss_vars)
+            self.n_sims += 1
             if not np.any(np.isnan(self.X_imp)):
                 break
 
@@ -69,6 +76,7 @@ class MdpFit:
         for miss_vars in mdp_vars_ordered:
             if is_in_tree(root, miss_vars):
                 self.impute(miss_vars)
+                self.n_sims += 1
             else:
                 non_adhoc_patterns.append(miss_vars)
         return non_adhoc_patterns
