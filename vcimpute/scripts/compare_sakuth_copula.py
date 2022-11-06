@@ -10,7 +10,7 @@ from gcimpute.gaussian_copula import GaussianCopula
 
 from vcimpute.helper_datagen import make_complete_data_matrix, mask_MCAR
 from vcimpute.utils import smae_mean, bias
-from vcimpute.sakuth import MdpFit
+from vcimpute.sakuth import VineMdpFit
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -35,7 +35,7 @@ def impute(X, X_mis, seed, **kwargs):
     vine_structure = 'R' if kwargs['vine_structure'] is None else kwargs['vine_structure']
     tagged_models = [
         (GaussianCopula(random_state=seed), 'gcimpute'),
-        (MdpFit(bicop_family=kwargs['copula_type'], num_threads=10, seed=seed), f'mdpfit{vine_structure}')
+        (VineMdpFit(bicop_family=kwargs['copula_type'], num_threads=10, seed=seed), f'mdpfit{vine_structure}')
     ]
     for model, tag in tagged_models:
         logger.info(f'running {tag}')

@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 from vcimpute.utils import bias
 from vcimpute.helper_datagen import make_complete_data_matrix
 from vcimpute.helper_datagen import mask_MCAR
-from vcimpute.sakuth import MdpFit
+from vcimpute.sakuth import VineMdpFit
 from vcimpute.zeisberger import VineCopFit, VineCopReg
 
 
@@ -23,7 +23,7 @@ def profiled_run(seed, copula_type):
 
     model_lst = [
         ('gcimpute', GaussianCopula()),
-        ('mdpfit', MdpFit(copula_type, num_threads, seed)),
+        ('mdpfit', VineMdpFit(copula_type, num_threads, seed)),
         ('copfit', VineCopFit(copula_type, num_threads, True, seed)),
         ('copreg', VineCopReg(copula_type, num_threads, 'R', True, seed)),
     ]

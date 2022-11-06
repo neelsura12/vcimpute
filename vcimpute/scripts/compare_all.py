@@ -9,7 +9,7 @@ import pandas as pd
 from gcimpute.gaussian_copula import GaussianCopula
 
 from vcimpute.helper_datagen import make_complete_data_matrix, mask_MCAR
-from vcimpute.sakuth import MdpFit
+from vcimpute.sakuth import VineMdpFit
 from vcimpute.zeisberger import VineCopReg, VineCopFit
 from vcimpute.utils import smae_mean, bias
 
@@ -36,7 +36,7 @@ def impute(X, X_mis, seed, **kwargs):
     vine_structure = 'R' if kwargs['vine_structure'] is None else kwargs['vine_structure']
     tagged_models = [
         (GaussianCopula(random_state=seed), 'gcimpute'),
-        (MdpFit(bicop_family=kwargs['copula_type'], num_threads=10, seed=seed), f'mdpfit{vine_structure}'),
+        (VineMdpFit(bicop_family=kwargs['copula_type'], num_threads=10, seed=seed), f'mdpfit{vine_structure}'),
         (VineCopReg(bicop_family=kwargs['copula_type'], num_threads=10, vine_structure=vine_structure, is_monotone=False, seed=seed), f'copreg{vine_structure}'),
         (VineCopFit(bicop_family=kwargs['copula_type'], num_threads=10, is_monotone=False, seed=seed), 'copfit'),
     ]

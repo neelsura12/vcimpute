@@ -9,12 +9,11 @@ from vcimpute.helper_vinestructs import relabel_vine_matrix, generate_r_vine_str
 from vcimpute.utils import bicop_family_map, get_order
 
 
-class MdpFit:
-
-    def __init__(self, bicop_family, num_threads, seed):
+class VineMdpFit:
+    def __init__(self, bicop_family, num_threads, seed, select_threshold=False):
         self.bicop_family = bicop_family_map[bicop_family]
         self.num_threads = num_threads
-        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=self.num_threads)
+        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=self.num_threads, select_threshold=select_threshold)
         self.X_imp = None
         self.cop = None
         self.d = None

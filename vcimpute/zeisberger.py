@@ -10,9 +10,9 @@ from vcimpute.utils import get, bicop_family_map, make_triangular_array, is_leaf
 
 
 class VineCopReg:
-    def __init__(self, bicop_family, num_threads, vine_structure, is_monotone, seed):
-        self.bicop_family = bicop_family_map[bicop_family]
-        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=num_threads)
+    def __init__(self, bicop_family, num_threads, vine_structure, is_monotone, seed, select_threshold=False):
+        bicop_family = bicop_family_map[bicop_family]
+        self.controls = pv.FitControlsVinecop(family_set=[bicop_family], num_threads=num_threads, select_threshold=select_threshold)
         assert vine_structure in ['R', 'C', 'D']
         self.vine_structure = vine_structure
         self.is_monotone = is_monotone
@@ -79,9 +79,9 @@ class VineCopReg:
 
 
 class VineCopFit:
-    def __init__(self, bicop_family, num_threads, is_monotone, seed):
-        self.bicop_family = bicop_family_map[bicop_family]
-        self.controls = pv.FitControlsVinecop(family_set=[self.bicop_family], num_threads=num_threads)
+    def __init__(self, bicop_family, num_threads, is_monotone, seed, select_threshold=False):
+        bicop_family = bicop_family_map[bicop_family]
+        self.controls = pv.FitControlsVinecop(family_set=[bicop_family], num_threads=num_threads, select_threshold=select_threshold)
         self.is_monotone = is_monotone
         self.rng = np.random.default_rng(seed)
         self.n_fits = 0
