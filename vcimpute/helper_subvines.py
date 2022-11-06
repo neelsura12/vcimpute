@@ -18,7 +18,7 @@ def find_subvine_structures(T, pcs, var_mis):
             T_cand, pcs_cand = func(T_cur, pcs_cur, var_mis, 0)
             d_cand = T_cand.shape[0]
             if is_leaf_in_all_subtrees(T_cand, var_mis):
-                if not np.any(list(map(lambda x: np.array_equal(x[0], T_cand), accepted))):
+                if not np.any(list(map(lambda x: np.array_equal(x[0], T_cand), accepted))) and (d_cand > 1):
                     accepted.append((T_cand, pcs_cand))
             elif 1 < d_cand < d_cur:
                 unexplored.append((T_cand, pcs_cand))

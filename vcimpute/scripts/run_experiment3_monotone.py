@@ -7,13 +7,13 @@ from gcimpute.helper_evaluation import get_smae
 from joblib import Parallel, delayed
 
 from vcimpute.helper_datagen import make_complete_data_matrix, mask_MCAR
-from vcimpute.helper_mdp import all_mdps, count_missing_by_row
+from vcimpute.helper_mdp import all_mdps, count_missing_by_row, count_missing_by_col
 from vcimpute.sakuth import MdpFit
 from vcimpute.utils import bias
 from vcimpute.zeisberger import VineCopFit, VineCopReg
 
 
-def profiled_run(seed):
+def profiled_run(seed, n_cols):
     n = 1000
     d = 10
     mask_frac = 0.1
@@ -24,15 +24,15 @@ def profiled_run(seed):
     model_lst = [
         ('gcimpute', GaussianCopula()),
         ('mdpfit', MdpFit(copula_type, num_threads, seed)),
-        ('copfit', VineCopFit(copula_type, num_threads, False, seed)),
-        ('copreg', VineCopReg(copula_type, num_threads, vine_structure, False, seed)),
+        ('copfit', VineCopFit(copula_type, num_threads, True, seed)),
+        ('copreg', VineCopReg(copula_type, num_threads, vine_structure, True, seed)),
     ]
 
     # make data
     X = make_complete_data_matrix(n, d, 'gaussian', seed)
 
     # mask data
-    X_mask = mask_MCAR(X, 'general', mask_frac, seed)
+    X_mask = mask_MCAR(X, 'monotone', mask_frac, seed, n_cols=n_cols)
 
     out = []
     for tag, model in model_lst:
@@ -48,8 +48,10 @@ def profiled_run(seed):
             getattr(model, 'n_fits', 1),
             getattr(model, 'n_sims', 1),
             len(all_mdps(X_mask)),
+            n_cols,
             np.sum(count_missing_by_row(X_mask) == 0),  # complete cases
-            np.nanmean(get_smae(X_imp, X, X_mask)),
+            count_missing_by_col(X_mask),
+            get_smae(X_imp, X, X_mask),
             elapsed,
             bias(X_imp, X),
         ))
@@ -57,5 +59,5 @@ def profiled_run(seed):
 
 
 if __name__ == '__main__':
-    out = Parallel(n_jobs=-1)(delayed(profiled_run)(seed) for seed in range(1000))
-    pickle.dump(out, open(f'experiment3_general.pkl', 'wb'))
+    out = Parallel(n_jobs=5)(delayed(profiled_run)(seed, n_cols) for seed in range(1000) for n_cols in range(1, 10))
+    pickle.dump(out, open(f'experiment3_monotone.pkl', 'wb'))
