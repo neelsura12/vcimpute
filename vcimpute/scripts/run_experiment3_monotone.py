@@ -59,5 +59,10 @@ def profiled_run(seed, n_cols):
 
 
 if __name__ == '__main__':
-    out = Parallel(n_jobs=5)(delayed(profiled_run)(seed, n_cols) for seed in range(1000) for n_cols in range(1, 10))
-    pickle.dump(out, open(f'experiment3_monotone.pkl', 'wb'))
+    import os
+    for i in range(10):
+        if os.path.isfile(f'experiment3_monotone_{i}.pkl'):
+            print('skipping', i)
+            continue
+        out = Parallel(n_jobs=4)(delayed(profiled_run)(seed, n_cols) for seed in range(100*i, 100*(i+1)) for n_cols in range(1, 10))
+        pickle.dump(out, open(f'experiment3_monotone_{i}.pkl', 'wb'))
