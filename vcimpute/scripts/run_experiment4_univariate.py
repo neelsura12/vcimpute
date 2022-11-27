@@ -1,3 +1,4 @@
+import os
 import pickle
 import time
 
@@ -14,6 +15,9 @@ from vcimpute.zeisberger import VineCopFit, VineCopReg
 
 
 def profiled_run(seed, d):
+    if os.path.isfile(f'/Users/nshah/work/vcimpute/data/experiment4_univariate_single/experiment4_univariate_{d}_{seed}.pkl'):
+        return
+
     n = 1000
     mask_frac = 0.1
     num_threads = 10
@@ -53,16 +57,9 @@ def profiled_run(seed, d):
             elapsed,
             bias(X_imp, X),
         ))
-    return out
+    pickle.dump(out, open(f'/Users/nshah/work/vcimpute/data/experiment4_univariate_single/experiment4_univariate_{d}_{seed}.pkl', 'wb'))
 
 
 if __name__ == '__main__':
-    import os
-    from datetime import datetime
-    for d in range(10, 101, 10)[::-1]:
-        if os.path.isfile(f'experiment4_univariate_{d}_20.pkl'):
-            print('skipping', d)
-            continue
-        out = Parallel(n_jobs=-1)(delayed(profiled_run)(seed, d) for seed in range(0, 10))
-        pickle.dump(out, open(f'experiment4_univariate_{d}_20.pkl', 'wb'))
-        print('done')
+    for seed in range(100):
+        Parallel(n_jobs=8)(delayed(profiled_run)(seed=seed, d=d) for d in range(20, 101, 10))
