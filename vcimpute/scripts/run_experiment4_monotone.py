@@ -8,9 +8,8 @@ from joblib import Parallel, delayed
 
 from vcimpute.helper_datagen import make_complete_data_matrix, mask_MCAR
 from vcimpute.helper_mdp import all_mdps, count_missing_by_col, count_missing_by_row
-from vcimpute.sakuth import VineMdpFit
 from vcimpute.utils import bias
-from vcimpute.zeisberger import VineCopFit, VineCopReg
+from vcimpute.zeisberger import VineCopReg
 
 
 def profiled_run(seed, d, mask_frac, n_cols):
@@ -21,8 +20,6 @@ def profiled_run(seed, d, mask_frac, n_cols):
 
     model_lst = [
         ('gcimpute', GaussianCopula()),
-        ('mdpfit', VineMdpFit(copula_type, num_threads, seed)),
-        ('copfit', VineCopFit(copula_type, num_threads, True, seed)),
         ('copreg', VineCopReg(copula_type, num_threads, vine_structure, True, seed)),
     ]
 
@@ -57,32 +54,5 @@ def profiled_run(seed, d, mask_frac, n_cols):
 
 
 if __name__ == '__main__':
-
-    params = [
-        (100, 0.48, 21),
-        (105, 0.48, 22),
-        (106, 0.48, 22),
-        (108, 0.49, 22),
-        (110, 0.48, 23),
-        (111, 0.48, 23),
-        (113, 0.49, 23),
-        (120, 0.48, 25),
-        (129, 0.5, 26),
-        (132, 0.49, 27),
-        (137, 0.49, 28),
-        (140, 0.48, 29),
-        (141, 0.49, 29),
-        (149, 0.5, 30),
-        (157, 0.49, 32),
-        (159, 0.5, 32),
-        (161, 0.49, 33),
-        (162, 0.49, 33),
-        (165, 0.49, 34),
-        (172, 0.49, 35),
-        (184, 0.5, 37),
-        (185, 0.49, 38),
-        (188, 0.49, 38),
-        (193, 0.49, 39),
-        (199, 0.5, 40)
-    ]
-    out = Parallel(n_jobs=-1)(delayed(profiled_run)(0, d, mask_frac, n_cols) for d, mask_frac, n_cols in params)
+    for seed in range(100):
+        Parallel(n_jobs=-1)(delayed(profiled_run)(seed, d, 0.5, 20) for d in range(50, 101, 10))

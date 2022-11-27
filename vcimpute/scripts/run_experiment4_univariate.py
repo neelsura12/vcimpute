@@ -59,13 +59,10 @@ def profiled_run(seed, d):
 if __name__ == '__main__':
     import os
     from datetime import datetime
-    for i in range(10):
-        print('outer', datetime.now(), i)
-        for d in range(14, 500, 20):
-            print('inner', datetime.now(), d)
-            if os.path.isfile(f'experiment4_univariate_{d}_{i}.pkl'):
-                print('skipping', d, i)
-                continue
-            out = Parallel(n_jobs=-1)(delayed(profiled_run)(seed, d) for seed in range(100*i, 100*(i+1)))
-            pickle.dump(out, open(f'experiment4_univariate_{d}_{i}.pkl', 'wb'))
+    for d in range(10, 101, 10)[::-1]:
+        if os.path.isfile(f'experiment4_univariate_{d}_20.pkl'):
+            print('skipping', d)
+            continue
+        out = Parallel(n_jobs=-1)(delayed(profiled_run)(seed, d) for seed in range(0, 10))
+        pickle.dump(out, open(f'experiment4_univariate_{d}_20.pkl', 'wb'))
         print('done')
